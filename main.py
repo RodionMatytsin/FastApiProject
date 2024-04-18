@@ -19,18 +19,14 @@ async def get_current_user(email, password):
 
 @app.post("/api/login", response_model=DefaultResponse, tags=["auth"])
 async def login_user(user: UserLoginSchema, response: Response):
-    valid_user = await get_current_user(user.email, user.password)
+    await get_current_user(user.email, user.password)
 
-    if valid_user:
-        user_token = UserToken(user.email)
-        response.set_cookie(key='user_token', value=user_token.token, max_age=1209600, httponly=True, secure=False)
-        print(response.__dict__)
+    user_token = UserToken(user.email)
+    response.set_cookie(key='user_token', value=user_token.token, max_age=1209600, httponly=True, secure=False)
+    print(response.__dict__)
 
-        content = {"result": True, "message": "Вы успешно авторизовались!", "data": {}}
-        return JSONResponse(content=content)
-    else:
-        detail = {"result": False, "message": "Неверные учетные данные!", "data": {}}
-        raise HTTPException(status_code=401, detail=detail)
+    content = {"result": True, "message": "Вы успешно авторизовались!", "data": {}}
+    return content
 
 
 @app.get('/api/logout', response_model=DefaultResponse, tags=["auth"])
@@ -38,7 +34,7 @@ async def logout(response: Response):
     response.delete_cookie(key='user_token')
     print(response.__dict__)
     content = {"result": True, "message": "Выход выполнен успешно!", "data": {}}
-    return JSONResponse(content=content)
+    return content
 
 
 @app.get('/api/home', response_model=DefaultResponse, tags=["auth"])

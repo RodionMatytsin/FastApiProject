@@ -9,5 +9,5 @@ class UserToken:
     @property
     def token(self):
         if self._token is None:
-            self._token = str(hash(f"{self.user_email}{datetime.now(timezone.utc) + timedelta(minutes=60):x}"))
+            self._token = str(hash(f"{self.user_email}{datetime.now(timezone.utc) + timedelta(minutes=60)}"))
         return self._token
