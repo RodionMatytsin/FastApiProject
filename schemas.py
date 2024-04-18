@@ -1,19 +1,19 @@
 from pydantic import BaseModel, Field
-
+from fastapi import Cookie
 
 class ProductSchema(BaseModel):
-    product_id: int = Field(default=None)
-    name_product: str = Field(default=None)
+    product_id: int = Field()
+    name_product: str = Field()
 
 
 class CartSchema(BaseModel):
-    product_id: int = Field(default=None)
-    name_product: str = Field(default=None)
+    product_id: int = Field()
+    name_product: str = Field()
 
 
 class UserLoginSchema(BaseModel):
-    email: str = Field(default=None)
-    password: str = Field(default=None)
+    email: str = Field()
+    password: str = Field()
 
 
 class DefaultResponse(BaseModel):
