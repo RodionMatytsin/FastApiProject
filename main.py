@@ -40,26 +40,22 @@ async def logout(response: Response):
 @app.get('/api/home', response_model=DefaultResponse, tags=["auth"])
 async def home(request: Request):
     token = request.cookies.get('user_token')
-    print(token)
 
     if not token:
         detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
         raise HTTPException(status_code=401, detail=detail)
 
+    print(token)
+    content = {"result": True, "message": "Добро пожаловать!", "data": {}}
+    return content
+
+
+@app.get("/api/products", tags=["products"])
+async def read_products(request: Request):
     try:
-        user_token = UserToken(token)
-    except ValueError:
-        detail = {"result": False, "message": "Неверный токен!", "data": {}}
-        raise HTTPException(status_code=401, detail=detail)
+        token = request.cookies.get('user_token')
 
-    content = {"result": True, "message": "Добро пожаловать!", "data": user_token.token}
-    return JSONResponse(content=content)
-
-
-@app.get("/api/products", response_model=DefaultResponse, tags=["products"])
-async def read_products(user_token = Cookie()):
-    try:
-        if user_token != 'valid_token':
+        if not token:
             detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
             raise HTTPException(status_code=401, detail=detail)
 
@@ -71,10 +67,12 @@ async def read_products(user_token = Cookie()):
         raise HTTPException(status_code=404, detail=detail)
 
 
-@app.get("/api/products/{product_id}", response_model=DefaultResponse, tags=["products"])
-async def read_product(product_id: int, user_token = Cookie()):
+@app.get("/api/products/{product_id}", tags=["products"])
+async def read_product(product_id: int, request: Request):
     try:
-        if user_token != 'valid_token':
+        token = request.cookies.get('user_token')
+
+        if not token:
             detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
             raise HTTPException(status_code=401, detail=detail)
 
@@ -96,10 +94,12 @@ async def get_product_by_id(product_id: int):
             return product
 
 
-@app.post("/api/products", response_model=DefaultResponse, tags=["products"])
-async def create_product(product: ProductSchema, user_token = Cookie()):
+@app.post("/api/products", tags=["products"])
+async def create_product(product: ProductSchema, request: Request):
     try:
-        if user_token != 'valid_token':
+        token = request.cookies.get('user_token')
+
+        if not token:
             detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
             raise HTTPException(status_code=401, detail=detail)
 
@@ -116,10 +116,12 @@ async def create_product(product: ProductSchema, user_token = Cookie()):
         raise HTTPException(status_code=404, detail=detail)
 
 
-@app.get("/api/cart", response_model=DefaultResponse, tags=["cart"])
-async def read_cart(user_token = Cookie()):
+@app.get("/api/cart", tags=["cart"])
+async def read_cart(request: Request):
     try:
-        if user_token != 'valid_token':
+        token = request.cookies.get('user_token')
+
+        if not token:
             detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
             raise HTTPException(status_code=401, detail=detail)
 
@@ -131,10 +133,12 @@ async def read_cart(user_token = Cookie()):
         raise HTTPException(status_code=404, detail=detail)
 
 
-@app.post("/api/cart/{product_id}", response_model=DefaultResponse, tags=["cart"])
-async def create_product_to_cart_by_id(product_id: int, user_token = Cookie()):
+@app.post("/api/cart/{product_id}", tags=["cart"])
+async def create_product_to_cart_by_id(product_id: int, request: Request):
     try:
-        if user_token != 'valid_token':
+        token = request.cookies.get('user_token')
+
+        if not token:
             detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
             raise HTTPException(status_code=401, detail=detail)
 
@@ -151,10 +155,12 @@ async def create_product_to_cart_by_id(product_id: int, user_token = Cookie()):
         raise HTTPException(status_code=404, detail=detail)
 
 
-@app.post("/api/cart", response_model=DefaultResponse, tags=["cart"])
-async def create_an_order_from_the_cart(user_token = Cookie()):
+@app.post("/api/cart", tags=["cart"])
+async def create_an_order_from_the_cart(request: Request):
     try:
-        if user_token != 'valid_token':
+        token = request.cookies.get('user_token')
+
+        if not token:
             detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
             raise HTTPException(status_code=401, detail=detail)
 
@@ -167,10 +173,12 @@ async def create_an_order_from_the_cart(user_token = Cookie()):
         raise HTTPException(status_code=404, detail=detail)
 
 
-@app.get("/api/order", response_model=DefaultResponse, tags=["order"])
-async def get_order(user_token = Cookie()):
+@app.get("/api/order", tags=["order"])
+async def get_order(request: Request):
     try:
-        if user_token != 'valid_token':
+        token = request.cookies.get('user_token')
+
+        if not token:
             detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
             raise HTTPException(status_code=401, detail=detail)
 
