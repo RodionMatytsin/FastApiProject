@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from fastapi import Cookie
+
 
 class ProductSchema(BaseModel):
     product_id: int = Field()
@@ -12,11 +12,12 @@ class CartSchema(BaseModel):
 
 
 class UserLoginSchema(BaseModel):
-    email: EmailStr
+    username: str = Field()
     password: str = Field()
 
 
 class UserSignUp(BaseModel):
+    username: str = Field()
     email: EmailStr
     password: str = Field()
 

@@ -16,9 +16,9 @@ async def read_users():
     return JSONResponse(content=content)
 
 
-async def get_current_user(email: str, password: str):
+async def get_current_user(username: str, password: str):
     for user in db.listUsers:
-        if user["email"] == email and user["password"] == password:
+        if user["username"] == username and user["password"] == password:
             return True
     detail = {"result": False, "message": "Ошибка, неверный логин или пароль!", "data": {}}
     raise HTTPException(status_code=404, detail=detail)
@@ -26,13 +26,20 @@ async def get_current_user(email: str, password: str):
 
 @app.post("/api/login", response_model=DefaultResponse, tags=["auth"])
 async def login_user(user: UserLoginSchema, response: Response):
-    await get_current_user(user.email, user.password)
+    await get_current_user(username=user.username, password=user.password)
 
-    user_token = UserToken(user.email)
+    user_token = UserToken(user.username)
     response.set_cookie(key="user_token", value=user_token.token, max_age=1209600, httponly=True, secure=False)
     print(response.__dict__)
 
     return {"result": True, "message": "Вы успешно авторизовались!", "data": {}}
+
+
+async def get_user_by_username(username: str):
+    for user in db.listUsers:
+        if user["username"] == username:
+            return user
+    return None
 
 
 async def get_user_by_email(email: str):
@@ -42,19 +49,24 @@ async def get_user_by_email(email: str):
     return None
 
 
-async def create_new_user(email: str, password: str):
+async def create_new_user(username: str, email: str, password: str):
     last_user_id = max([user["user_id"] for user in db.listUsers]) + 1 if db.listUsers else 0
-    new_user = {"user_id": last_user_id, "email": email, "password": password}
+    new_user = {"user_id": last_user_id, "username": username, "email": email, "password": password}
     db.listUsers.append(new_user)
     return new_user
 
 
 @app.post("/api/signup", response_model=DefaultResponse, tags=["auth"])
 async def api_signup(user: UserSignUp):
+    if await get_user_by_username(username=user.username):
+        detail = {"result": False, "message": "Ошибка, это имя уже занято!", "data": {}}
+        raise HTTPException(status_code=409, detail=detail)
+
     if await get_user_by_email(email=user.email):
         detail = {"result": False, "message": "Ошибка, эта почта уже занята!", "data": {}}
         raise HTTPException(status_code=409, detail=detail)
-    await create_new_user(user.email, user.password)
+
+    await create_new_user(username=user.username, email=user.email, password=user.password)
     return {"result": True, "message": "Вы успешно зарегистрировались!", "data": {}}
 
 
@@ -94,6 +106,13 @@ async def read_products(request: Request):
         raise HTTPException(status_code=404, detail=detail)
 
 
+async def get_product_by_id(product_id: int):
+    for product in db.listProducts:
+        if product["product_id"] == product_id:
+            return product
+    return None
+
+
 @app.get("/api/products/{product_id}", tags=["products"])
 async def read_product(product_id: int, request: Request):
     try:
@@ -103,7 +122,7 @@ async def read_product(product_id: int, request: Request):
             detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
             raise HTTPException(status_code=401, detail=detail)
 
-        product = await get_product_by_id(product_id)
+        product = await get_product_by_id(product_id=product_id)
         if product is None:
             detail = {"result": False, "message": "Ошибка, товар с таким идентификатором не найден!", "data": {}}
             raise HTTPException(status_code=404, detail=detail)
@@ -113,13 +132,6 @@ async def read_product(product_id: int, request: Request):
     except Exception as ex:
         detail = {"result": False, "message": f"Ошибка при просмотре товара: {ex}!", "data": {}}
         raise HTTPException(status_code=404, detail=detail)
-
-
-async def get_product_by_id(product_id: int):
-    for product in db.listProducts:
-        if product["product_id"] == product_id:
-            return product
-    return None
 
 
 @app.post("/api/products", tags=["products"])
@@ -170,7 +182,7 @@ async def create_product_to_cart_by_id(product_id: int, request: Request):
             detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
             raise HTTPException(status_code=401, detail=detail)
 
-        product = await get_product_by_id(product_id)
+        product = await get_product_by_id(product_id=product_id)
         cart = CartSchema(product_id=product["product_id"], name_product=product["name_product"])
         db.listOfProductInCart.append(cart.dict())
 

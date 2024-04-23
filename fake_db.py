@@ -9,6 +9,6 @@ listOfProductInCart = []
 listOrder = []
 
 listUsers = [
-    {"user_id": 1, "email": "123@mail.ru", "password": "111"},
-    {"user_id": 2, "email": "adm@mail.ru", "password": "999"}
+    {"user_id": 1, "username": "aboba", "email": "123@mail.ru", "password": "111"},
+    {"user_id": 2, "username": "admin", "email": "adm@mail.ru", "password": "999"}
 ]
