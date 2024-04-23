@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi import Request, Cookie, Response
 from starlette.responses import JSONResponse
-from schemas import ProductSchema, CartSchema, UserLoginSchema, DefaultResponse
+from schemas import ProductSchema, CartSchema, UserLoginSchema, DefaultResponse, UserSignUp
 import fake_db as db
 from user_token import UserToken
 
@@ -9,7 +9,14 @@ from user_token import UserToken
 app = FastAPI()
 
 
-async def get_current_user(email, password):
+@app.get("/api/users", tags=["auth"])
+async def read_users():
+    content = {"result": True, "message": "Успешно, список пользователей был просмотрен!",
+                   "data": sorted(db.listUsers, key=lambda x: x["user_id"])}
+    return JSONResponse(content=content)
+
+
+async def get_current_user(email: str, password: str):
     for user in db.listUsers:
         if user["email"] == email and user["password"] == password:
             return True
@@ -25,16 +32,36 @@ async def login_user(user: UserLoginSchema, response: Response):
     response.set_cookie(key='user_token', value=user_token.token, max_age=1209600, httponly=True, secure=False)
     print(response.__dict__)
 
-    content = {"result": True, "message": "Вы успешно авторизовались!", "data": {}}
-    return content
+    return {"result": True, "message": "Вы успешно авторизовались!", "data": {}}
+
+
+async def get_user_by_email(email: str):
+    for user in db.listUsers:
+        if user["email"] == email:
+            return user
+
+
+async def create_new_user(email: str, password: str):
+    last_user_id = max([user['user_id'] for user in db.listUsers]) + 1 if db.listUsers else 0
+    new_user = {"user_id": last_user_id, "email": email, "password": password}
+    db.listUsers.append(new_user)
+    return new_user
+
+
+@app.post("/api/signup", response_model=DefaultResponse, tags=["auth"])
+async def api_signup(user: UserSignUp):
+    if await get_user_by_email(email=user.email):
+        detail = {"result": False, "message": "Ошибка, эта почта уже занята!", "data": {}}
+        raise HTTPException(status_code=409, detail=detail)
+    await create_new_user(user.email, user.password)
+    return {"result": True, "message": "Вы успешно зарегистрировались!", "data": {}}
 
 
 @app.get('/api/logout', response_model=DefaultResponse, tags=["auth"])
 async def logout(response: Response):
     response.delete_cookie(key='user_token')
     print(response.__dict__)
-    content = {"result": True, "message": "Выход выполнен успешно!", "data": {}}
-    return content
+    return {"result": True, "message": "Выход выполнен успешно!", "data": {}}
 
 
 @app.get('/api/home', response_model=DefaultResponse, tags=["auth"])
@@ -46,8 +73,7 @@ async def home(request: Request):
         raise HTTPException(status_code=401, detail=detail)
 
     print(token)
-    content = {"result": True, "message": "Добро пожаловать!", "data": {}}
-    return content
+    return {"result": True, "message": "Добро пожаловать!", "data": {}}
 
 
 @app.get("/api/products", tags=["products"])
