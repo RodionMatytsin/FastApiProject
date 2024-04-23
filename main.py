@@ -29,7 +29,7 @@ async def login_user(user: UserLoginSchema, response: Response):
     await get_current_user(user.email, user.password)
 
     user_token = UserToken(user.email)
-    response.set_cookie(key='user_token', value=user_token.token, max_age=1209600, httponly=True, secure=False)
+    response.set_cookie(key="user_token", value=user_token.token, max_age=1209600, httponly=True, secure=False)
     print(response.__dict__)
 
     return {"result": True, "message": "Вы успешно авторизовались!", "data": {}}
@@ -39,10 +39,11 @@ async def get_user_by_email(email: str):
     for user in db.listUsers:
         if user["email"] == email:
             return user
+    return None
 
 
 async def create_new_user(email: str, password: str):
-    last_user_id = max([user['user_id'] for user in db.listUsers]) + 1 if db.listUsers else 0
+    last_user_id = max([user["user_id"] for user in db.listUsers]) + 1 if db.listUsers else 0
     new_user = {"user_id": last_user_id, "email": email, "password": password}
     db.listUsers.append(new_user)
     return new_user
@@ -59,14 +60,14 @@ async def api_signup(user: UserSignUp):
 
 @app.get('/api/logout', response_model=DefaultResponse, tags=["auth"])
 async def logout(response: Response):
-    response.delete_cookie(key='user_token')
+    response.delete_cookie(key="user_token")
     print(response.__dict__)
     return {"result": True, "message": "Выход выполнен успешно!", "data": {}}
 
 
 @app.get('/api/home', response_model=DefaultResponse, tags=["auth"])
 async def home(request: Request):
-    token = request.cookies.get('user_token')
+    token = request.cookies.get("user_token")
 
     if not token:
         detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
@@ -79,14 +80,14 @@ async def home(request: Request):
 @app.get("/api/products", tags=["products"])
 async def read_products(request: Request):
     try:
-        token = request.cookies.get('user_token')
+        token = request.cookies.get("user_token")
 
         if not token:
             detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
             raise HTTPException(status_code=401, detail=detail)
 
         content = {"result": True, "message": "Успешно, список товаров был просмотрен!",
-                   "data": sorted(db.listProducts, key=lambda x: x['product_id'])}
+                   "data": sorted(db.listProducts, key=lambda x: x["product_id"])}
         return JSONResponse(content=content)
     except Exception as ex:
         detail = {"result": False, "message": f"Ошибка при просмотре списка товаров: {ex}!", "data": {}}
@@ -96,7 +97,7 @@ async def read_products(request: Request):
 @app.get("/api/products/{product_id}", tags=["products"])
 async def read_product(product_id: int, request: Request):
     try:
-        token = request.cookies.get('user_token')
+        token = request.cookies.get("user_token")
 
         if not token:
             detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
@@ -118,18 +119,19 @@ async def get_product_by_id(product_id: int):
     for product in db.listProducts:
         if product["product_id"] == product_id:
             return product
+    return None
 
 
 @app.post("/api/products", tags=["products"])
 async def create_product(product: ProductSchema, request: Request):
     try:
-        token = request.cookies.get('user_token')
+        token = request.cookies.get("user_token")
 
         if not token:
             detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
             raise HTTPException(status_code=401, detail=detail)
 
-        if any(j['product_id'] == product.product_id for j in db.listProducts):
+        if any(j["product_id"] == product.product_id for j in db.listProducts):
             detail = {"result": False, "message": "Ошибка, товар с таким идентификатором уже существует!", "data": {}}
             raise HTTPException(status_code=400, detail=detail)
 
@@ -145,14 +147,14 @@ async def create_product(product: ProductSchema, request: Request):
 @app.get("/api/cart", tags=["cart"])
 async def read_cart(request: Request):
     try:
-        token = request.cookies.get('user_token')
+        token = request.cookies.get("user_token")
 
         if not token:
             detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
             raise HTTPException(status_code=401, detail=detail)
 
         content = {"result": True, "message": "Просмотр корзины совершенно успешно!",
-                   "data": sorted(db.listOfProductInCart, key=lambda x: x['product_id'])}
+                   "data": sorted(db.listOfProductInCart, key=lambda x: x["product_id"])}
         return JSONResponse(content=content)
     except Exception as ex:
         detail = {"result": False, "message": f"Ошибка просмотра корзины: {ex}!", "data": {}}
@@ -162,7 +164,7 @@ async def read_cart(request: Request):
 @app.post("/api/cart/{product_id}", tags=["cart"])
 async def create_product_to_cart_by_id(product_id: int, request: Request):
     try:
-        token = request.cookies.get('user_token')
+        token = request.cookies.get("user_token")
 
         if not token:
             detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
@@ -184,7 +186,7 @@ async def create_product_to_cart_by_id(product_id: int, request: Request):
 @app.post("/api/cart", tags=["cart"])
 async def create_an_order_from_the_cart(request: Request):
     try:
-        token = request.cookies.get('user_token')
+        token = request.cookies.get("user_token")
 
         if not token:
             detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
@@ -202,7 +204,7 @@ async def create_an_order_from_the_cart(request: Request):
 @app.get("/api/order", tags=["order"])
 async def get_order(request: Request):
     try:
-        token = request.cookies.get('user_token')
+        token = request.cookies.get("user_token")
 
         if not token:
             detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
