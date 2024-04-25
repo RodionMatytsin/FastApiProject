@@ -12,7 +12,7 @@ app = FastAPI()
 @app.get("/api/users", tags=["auth"])
 async def read_users():
     content = {"result": True, "message": "Успешно, список пользователей был просмотрен!",
-                   "data": sorted(db.listUsers, key=lambda x: x["user_id"])}
+               "data": sorted(db.listUsers, key=lambda x: x["user_id"])}
     return JSONResponse(content=content)
 
 
