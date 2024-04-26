@@ -8,10 +8,7 @@ listOfProductInCart = []
 
 listOrder = []
 
-listToken = [
-    {"user_id": 1, "acces_token": "", "expire": ""},
-    {"user_id": 2, "acces_token": "", "expire": ""}
-]
+listToken = []
 
 listUsers = [
     {"user_id": 1, "username": "aboba", "email": "123@mail.ru", "password": "111"},

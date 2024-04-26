@@ -16,21 +16,44 @@ async def read_users():
     return JSONResponse(content=content)
 
 
+@app.get("/api/users_token", tags=["auth"])
+async def read_users_token():
+    data = [{"user_id": user_token["user_id"],
+             "acces_token": user_token["acces_token"],
+             "expire": user_token["expire"].isoformat()}
+            for user_token in sorted(db.listToken, key=lambda x: x["user_id"])]
+
+    content = {"result": True, "message": "Успешно, список токенов был просмотрен!", "data": data}
+    return JSONResponse(content=content)
+
+
 async def get_current_user(username: str, password: str):
     for user in db.listUsers:
         if user["username"] == username and user["password"] == password:
-            return True
+            return user
     detail = {"result": False, "message": "Ошибка, неверный логин или пароль!", "data": {}}
     raise HTTPException(status_code=404, detail=detail)
 
 
 @app.post("/api/login", response_model=DefaultResponse, tags=["auth"])
-async def login_user(user: UserLoginSchema, response: Response):
-    await get_current_user(username=user.username, password=user.password)
+async def login_user(user: UserLoginSchema, request: Request, response: Response):
+    user = await get_current_user(username=user.username, password=user.password)
 
-    user_token = UserToken(user.username)
-    response.set_cookie(key="user_token", value=user_token.token, max_age=1209600, httponly=True, secure=False)
-    print(response.__dict__)
+    access_token = request.cookies.get("user_token")
+
+    if not access_token or not UserToken(user_id=user["user_id"]).is_valid():
+        user_token = UserToken(user_id=user["user_id"])
+        db.listToken.append({
+            "user_id": user["user_id"],
+            "acces_token": user_token.access_token,
+            "expire": user_token.expire
+        })
+        response.set_cookie(key="user_token", value=user_token.access_token, httponly=True)
+    else:
+        user_token = next((ut for ut in db.listToken if ut["acces_token"] == access_token), None)
+        user_token["expire"] = UserToken(user_id=user["user_id"]).expire
+
+    print(access_token)
 
     return {"result": True, "message": "Вы успешно авторизовались!", "data": {}}
 
@@ -57,7 +80,7 @@ async def create_new_user(username: str, email: str, password: str):
 
 
 @app.post("/api/signup", response_model=DefaultResponse, tags=["auth"])
-async def api_signup(user: UserSignUp):
+async def api_signup(user: UserSignUp, response: Response):
     if await get_user_by_username(username=user.username):
         detail = {"result": False, "message": "Ошибка, это имя уже занято!", "data": {}}
         raise HTTPException(status_code=409, detail=detail)
@@ -66,7 +89,15 @@ async def api_signup(user: UserSignUp):
         detail = {"result": False, "message": "Ошибка, эта почта уже занята!", "data": {}}
         raise HTTPException(status_code=409, detail=detail)
 
-    await create_new_user(username=user.username, email=user.email, password=user.password)
+    new_user = await create_new_user(username=user.username, email=user.email, password=user.password)
+    user_token = UserToken(user_id=new_user["user_id"])
+    db.listToken.append(
+        {"user_id": new_user["user_id"],
+         "acces_token": user_token.access_token,
+         "expire": user_token.expire}
+    )
+    response.set_cookie(key="user_token", value=user_token.access_token, httponly=True)
+
     return {"result": True, "message": "Вы успешно зарегистрировались!", "data": {}}
 
 
@@ -79,14 +110,14 @@ async def logout(response: Response):
 
 @app.get('/api/home', response_model=DefaultResponse, tags=["auth"])
 async def home(request: Request):
-    token = request.cookies.get("user_token")
-
-    if not token:
+    access_token = request.cookies.get("user_token")
+    if not access_token:
         detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
         raise HTTPException(status_code=401, detail=detail)
 
-    print(token)
-    return {"result": True, "message": "Добро пожаловать!", "data": {}}
+    print(access_token)
+
+    return {"result": True, "message": f"Добро пожаловать!", "data": {}}
 
 
 @app.get("/api/products", tags=["products"])
