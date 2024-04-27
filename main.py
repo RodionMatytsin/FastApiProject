@@ -1,3 +1,4 @@
+import hashlib
 from fastapi import FastAPI, HTTPException
 from fastapi import Request, Cookie, Response
 from starlette.responses import JSONResponse
@@ -9,6 +10,12 @@ from user_token import UserToken
 app = FastAPI()
 
 
+def hash_password(password: str) -> str:
+    h = hashlib.new('sha256')
+    h.update(password.encode('utf-8'))
+    return h.hexdigest()
+
+
 @app.get("/api/users", tags=["auth"])
 async def read_users():
     content = {"result": True, "message": "Успешно, список пользователей был просмотрен!",
@@ -18,16 +25,17 @@ async def read_users():
 
 @app.get("/api/users_token", tags=["auth"])
 async def read_users_token():
-    data = [{"user_id": user_token["user_id"],
-             "acces_token": user_token["acces_token"],
-             "expire": user_token["expire"].isoformat()}
-            for user_token in sorted(db.listToken, key=lambda x: x["user_id"])]
+    data = [{"user_id": token["user_id"],
+             "acces_token": token["acces_token"],
+             "expire": token["expire"].isoformat(),
+             "datetime_create": token["datetime_create"].isoformat()}
+            for token in sorted(db.listToken, key=lambda x: x["user_id"])]
 
     content = {"result": True, "message": "Успешно, список токенов был просмотрен!", "data": data}
     return JSONResponse(content=content)
 
 
-async def get_current_user(username: str, password: str):
+async def get_current_user(username: str, password: str) -> dict:
     for user in db.listUsers:
         if user["username"] == username and user["password"] == password:
             return user
@@ -37,7 +45,7 @@ async def get_current_user(username: str, password: str):
 
 @app.post("/api/login", response_model=DefaultResponse, tags=["auth"])
 async def login_user(user: UserLoginSchema, request: Request, response: Response):
-    user = await get_current_user(username=user.username, password=user.password)
+    user = await get_current_user(username=user.username, password=hash_password(user.password))
 
     access_token = request.cookies.get("user_token")
 
@@ -46,7 +54,8 @@ async def login_user(user: UserLoginSchema, request: Request, response: Response
         db.listToken.append({
             "user_id": user["user_id"],
             "acces_token": user_token.access_token,
-            "expire": user_token.expire
+            "expire": user_token.expire,
+            "datetime_create": user_token.datetime_of_creation()
         })
         response.set_cookie(key="user_token", value=user_token.access_token, httponly=True)
     else:
@@ -58,21 +67,19 @@ async def login_user(user: UserLoginSchema, request: Request, response: Response
     return {"result": True, "message": "Вы успешно авторизовались!", "data": {}}
 
 
-async def get_user_by_username(username: str):
+async def get_user_by_username(username: str) -> str:
     for user in db.listUsers:
         if user["username"] == username:
             return user
-    return None
 
 
-async def get_user_by_email(email: str):
+async def get_user_by_email(email: str) -> str:
     for user in db.listUsers:
         if user["email"] == email:
             return user
-    return None
 
 
-async def create_new_user(username: str, email: str, password: str):
+async def create_new_user(username: str, email: str, password: str) -> dict:
     last_user_id = max([user["user_id"] for user in db.listUsers]) + 1 if db.listUsers else 0
     new_user = {"user_id": last_user_id, "username": username, "email": email, "password": password}
     db.listUsers.append(new_user)
@@ -89,12 +96,13 @@ async def api_signup(user: UserSignUp, response: Response):
         detail = {"result": False, "message": "Ошибка, эта почта уже занята!", "data": {}}
         raise HTTPException(status_code=409, detail=detail)
 
-    new_user = await create_new_user(username=user.username, email=user.email, password=user.password)
+    new_user = await create_new_user(username=user.username, email=user.email, password=hash_password(user.password))
     user_token = UserToken(user_id=new_user["user_id"])
     db.listToken.append(
         {"user_id": new_user["user_id"],
          "acces_token": user_token.access_token,
-         "expire": user_token.expire}
+         "expire": user_token.expire,
+         "datetime_create": user_token.datetime_of_creation()}
     )
     response.set_cookie(key="user_token", value=user_token.access_token, httponly=True)
 
@@ -102,9 +110,20 @@ async def api_signup(user: UserSignUp, response: Response):
 
 
 @app.get('/api/logout', response_model=DefaultResponse, tags=["auth"])
-async def logout(response: Response):
-    response.delete_cookie(key="user_token")
-    print(response.__dict__)
+async def logout(response: Response, request: Request):
+    access_token = request.cookies.get("user_token")
+
+    if not access_token:
+        detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)
+
+    if access_token:
+        user_token = next((ut for ut in db.listToken if ut["acces_token"] == access_token), None)
+        if user_token:
+            db.listToken.remove(user_token)
+        response.delete_cookie(key="user_token")
+        print(response.__dict__)
+
     return {"result": True, "message": "Выход выполнен успешно!", "data": {}}
 
 
@@ -137,11 +156,10 @@ async def read_products(request: Request):
         raise HTTPException(status_code=404, detail=detail)
 
 
-async def get_product_by_id(product_id: int):
+async def get_product_by_id(product_id: int) -> int:
     for product in db.listProducts:
         if product["product_id"] == product_id:
             return product
-    return None
 
 
 @app.get("/api/products/{product_id}", tags=["products"])
