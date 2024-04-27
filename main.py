@@ -130,10 +130,10 @@ async def logout(response: Response, request: Request):
 @app.get('/api/home', response_model=DefaultResponse, tags=["auth"])
 async def home(request: Request):
     access_token = request.cookies.get("user_token")
+
     if not access_token:
         detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
         raise HTTPException(status_code=401, detail=detail)
-
     print(access_token)
 
     return {"result": True, "message": f"Добро пожаловать!", "data": {}}
