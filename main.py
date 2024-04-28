@@ -44,7 +44,7 @@ async def get_current_user(username: str, password: str) -> dict:
 
 
 @app.post("/api/login", response_model=DefaultResponse, tags=["auth"])
-async def login_user(user: UserLoginSchema, request: Request, response: Response):
+async def api_login(user: UserLoginSchema, request: Request, response: Response):
     user = await get_current_user(username=user.username, password=hash_password(user.password))
 
     access_token = request.cookies.get("user_token")
@@ -110,7 +110,7 @@ async def api_signup(user: UserSignUp, response: Response):
 
 
 @app.get('/api/logout', response_model=DefaultResponse, tags=["auth"])
-async def logout(response: Response, request: Request):
+async def api_logout(response: Response, request: Request):
     access_token = request.cookies.get("user_token")
 
     if not access_token:
@@ -128,7 +128,7 @@ async def logout(response: Response, request: Request):
 
 
 @app.get('/api/home', response_model=DefaultResponse, tags=["auth"])
-async def home(request: Request):
+async def api_home(request: Request):
     access_token = request.cookies.get("user_token")
 
     if not access_token:
