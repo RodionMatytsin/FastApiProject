@@ -11,9 +11,9 @@ listOrder = []
 listToken = []
 
 listUsers = [
-    {"user_id": 1, "username": "aboba", "email": "123@mail.ru", "password": "f6e0a1e2ac41945a9aa7ff8a8aaa0cebc12a3bcc981a929ad5cf810a090e11ae"},
-    {"user_id": 2, "username": "admin", "email": "adm@mail.ru", "password": "83cf8b609de60036a8277bd0e96135751bbc07eb234256d4b65b893360651bf2"}
+    {"user_id": 1, "username": "aboba", "email": "123@mail.ru", "password": "c775e7b757ede630cd0aa1113bd102661ab38829ca52a6422ab782862f268646"},
+    {"user_id": 2, "username": "admin", "email": "adm@mail.ru", "password": "ce3a598687c8d2e5aa6bedad20e059b4a78cca0adad7e563b07998d5cd226b8c"}
 ]
 
-# aboba - 111
-# admin - 999
+# 1234567890 - c775e7b757ede630cd0aa1113bd102661ab38829ca52a6422ab782862f268646
+# 9999999999 - ce3a598687c8d2e5aa6bedad20e059b4a78cca0adad7e563b07998d5cd226b8c
