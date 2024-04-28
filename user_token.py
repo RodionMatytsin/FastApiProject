@@ -21,4 +21,3 @@ class UserToken:
 
     def is_valid(self):
         return datetime.now() <= self.expire
-
