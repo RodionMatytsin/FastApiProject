@@ -7,7 +7,7 @@ import fake_db as db
 from user_token import UserToken
 
 
-app = FastAPI()
+app = FastAPI(title="FastAPI")
 
 
 def hash_password(password: str) -> str:
