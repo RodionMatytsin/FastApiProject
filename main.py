@@ -4,7 +4,8 @@ from fastapi import Request, Cookie, Response
 from starlette.responses import JSONResponse
 from schemas import ProductSchema, CartSchema, UserLoginSchema, DefaultResponse, UserSignUp
 import fake_db as db
-from user_token import UserToken
+from uuid import uuid4
+from datetime import datetime, timedelta
 
 
 app = FastAPI(title="FastAPI")
@@ -43,26 +44,36 @@ async def get_current_user(username: str, password: str) -> dict:
     raise HTTPException(status_code=404, detail=detail)
 
 
+async def create_user_token(user_id: dict) -> dict:
+    new_token = {"user_id": user_id["user_id"], "acces_token": str(uuid4()),
+                 "expire": datetime.utcnow() + timedelta(minutes=1), "datetime_create": datetime.utcnow()}
+    db.listToken.append(new_token)
+    return new_token
+
+
+async def update_user_token(user_id: dict) -> dict:
+    token = next((token for token in db.listToken if token["user_id"] == user_id["user_id"]), None)
+    if token is not None:
+        token["expire"] = datetime.utcnow() + timedelta(minutes=1)
+        return token
+
+
 @app.post("/api/login", response_model=DefaultResponse, tags=["auth"])
 async def api_login(user: UserLoginSchema, request: Request, response: Response):
     user = await get_current_user(username=user.username, password=hash_password(user.password))
+    print(user)
 
     access_token = request.cookies.get("user_token")
 
-    if not access_token or not UserToken(user_id=user["user_id"]).is_valid():
-        user_token = UserToken(user_id=user["user_id"])
-        db.listToken.append({
-            "user_id": user["user_id"],
-            "acces_token": user_token.access_token,
-            "expire": user_token.expire,
-            "datetime_create": user_token.datetime_of_creation()
-        })
-        response.set_cookie(key="user_token", value=user_token.access_token, httponly=True)
+    if access_token is None:
+        new_token = await create_user_token(user_id=user)
+        print(new_token)
+        response.set_cookie(key="user_token", value=new_token["acces_token"], httponly=True)
     else:
-        user_token = next((ut for ut in db.listToken if ut["acces_token"] == access_token), None)
-        user_token["expire"] = UserToken(user_id=user["user_id"]).expire
-
-    print(access_token)
+        updated_token = await update_user_token(user_id=user)
+        print(updated_token)
+        if updated_token is not None:
+            response.set_cookie(key="user_token", value=updated_token["acces_token"], httponly=True)
 
     return {"result": True, "message": "Вы успешно авторизовались!", "data": {}}
 
@@ -97,14 +108,10 @@ async def api_signup(user: UserSignUp, response: Response):
         raise HTTPException(status_code=409, detail=detail)
 
     new_user = await create_new_user(username=user.username, email=user.email, password=hash_password(user.password))
-    user_token = UserToken(user_id=new_user["user_id"])
-    db.listToken.append(
-        {"user_id": new_user["user_id"],
-         "acces_token": user_token.access_token,
-         "expire": user_token.expire,
-         "datetime_create": user_token.datetime_of_creation()}
-    )
-    response.set_cookie(key="user_token", value=user_token.access_token, httponly=True)
+    print(new_user)
+    user_token = await create_user_token(user_id=new_user)
+    print(user_token)
+    response.set_cookie(key="user_token", value=user_token["acces_token"], httponly=True)
 
     return {"result": True, "message": "Вы успешно зарегистрировались!", "data": {}}
 
@@ -117,12 +124,15 @@ async def api_logout(response: Response, request: Request):
         detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
         raise HTTPException(status_code=401, detail=detail)
 
-    if access_token:
-        user_token = next((ut for ut in db.listToken if ut["acces_token"] == access_token), None)
-        if user_token:
-            db.listToken.remove(user_token)
-        response.delete_cookie(key="user_token")
-        print(response.__dict__)
+    response.delete_cookie(key="user_token")
+    print(response.__dict__)
+
+    # if access_token:
+    #     user_token = next((ut for ut in db.listToken if ut["acces_token"] == access_token), None)
+    #     if user_token:
+    #         db.listToken.remove(user_token)
+    #     response.delete_cookie(key="user_token")
+    #     print(response.__dict__)
 
     return {"result": True, "message": "Выход выполнен успешно!", "data": {}}
 
@@ -134,6 +144,7 @@ async def api_home(request: Request):
     if not access_token:
         detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
         raise HTTPException(status_code=401, detail=detail)
+
     print(access_token)
 
     return {"result": True, "message": f"Добро пожаловать!", "data": {}}
