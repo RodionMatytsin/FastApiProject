@@ -1,4 +1,4 @@
-import uuid
+from uuid import uuid4
 from datetime import datetime, timedelta
 
 
@@ -10,7 +10,7 @@ class UserToken:
         self.datetime_create = self.datetime_of_creation()
 
     def generate_token(self):
-        return str(uuid.uuid4())
+        return str(uuid4())
 
     def calculate_expiration_token(self):
         expiration_date = datetime.now() + timedelta(weeks=1)
