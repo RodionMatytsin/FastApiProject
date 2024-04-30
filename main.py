@@ -3,7 +3,7 @@ from pydantic import UUID4
 from fastapi import FastAPI, HTTPException
 from fastapi import Request, Cookie, Response, Depends
 from starlette.responses import JSONResponse
-from schemas import ProductSchema, CartSchema, UserLoginSchema, DefaultResponse, UserSignUp, UserRegular
+from schemas import ProductSchema, CartSchema, UserLoginSchema, DefaultResponse, UserSignUp
 from fake_db import listUsers, listToken, listProducts, listOrder, listOfProductInCart
 from uuid import uuid4
 from datetime import datetime, timedelta
@@ -28,7 +28,7 @@ async def read_users():
 @app.get("/api/users_token", tags=["auth"])
 async def read_users_token():
     data = [{"user_id": token["user_id"],
-             "acces_token": token["acces_token"],
+             "access_token": token["access_token"],
              "expire": token["expire"].isoformat(),
              "datetime_create": token["datetime_create"].isoformat()}
             for token in sorted(listToken, key=lambda x: x["user_id"])]
@@ -48,13 +48,13 @@ async def get_user(username: str, password: str) -> dict:
 async def update_user_token(user_id: int) -> dict:
     check_token = next((token for token in listToken if token["user_id"] == user_id), None)
     if check_token is None:
-        new_token = {"user_id": user_id, "acces_token": str(uuid4()),
+        new_token = {"user_id": user_id, "access_token": str(uuid4()),
                      "expire": datetime.utcnow() + timedelta(minutes=1), "datetime_create": datetime.utcnow()}
         listToken.append(new_token)
         return new_token
     else:
         if datetime.utcnow() > check_token["expire"]:
-            check_token["acces_token"] = str(uuid4())
+            check_token["access_token"] = str(uuid4())
             check_token["expire"] = datetime.utcnow() + timedelta(minutes=1)
             return check_token
         else:
@@ -66,7 +66,7 @@ async def api_login(user: UserLoginSchema, response: Response):
     user = await get_user(username=user.username, password=hash_password(user.password))
 
     user_token = await update_user_token(user_id=user["user_id"])
-    response.set_cookie(key="user_token", value=user_token["acces_token"], httponly=True)
+    response.set_cookie(key="user_token", value=user_token["access_token"], httponly=True)
 
     return {"result": True, "message": "Вы успешно авторизовались!", "data": {}}
 
@@ -141,7 +141,7 @@ async def api_home(request: Request):
 # async def get_user_by_token(token: UUID4):
 #     user = next((user for user in listToken if user["acces_token"] == token), None)
 #     if user:
-#         return UserRegular(user_id=user["user_id"], acces_token=user["acces_token"], expire=user["expire"])
+#         return user
 #     else:
 #         detail = {"result": False, "message": "Не верный токен!", "data": {}}
 #         raise HTTPException(status_code=401, detail=detail)
@@ -149,15 +149,20 @@ async def api_home(request: Request):
 
 @app.get("/api/products", tags=["products"])
 async def read_products(request: Request):
-    token = request.cookies.get("user_token")
+    access_token = request.cookies.get("user_token")
 
-    if not token:
+    if not access_token:
         detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
         raise HTTPException(status_code=401, detail=detail)
 
-    content = {"result": True, "message": "Успешно, список товаров был просмотрен!",
-               "data": sorted(listProducts, key=lambda x: x["product_id"])}
-    return JSONResponse(content=content)
+    check_token = next((token for token in listToken if token["access_token"] == access_token), None)
+    if check_token:
+        content = {"result": True, "message": "Успешно, список товаров был просмотрен!",
+                   "data": sorted(listProducts, key=lambda x: x["product_id"])}
+        return JSONResponse(content=content)
+    else:
+        detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)
 
 
 async def get_product_by_id(product_id: int) -> dict:
