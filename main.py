@@ -1,8 +1,9 @@
 import hashlib
+from pydantic import UUID4
 from fastapi import FastAPI, HTTPException
-from fastapi import Request, Cookie, Response
+from fastapi import Request, Cookie, Response, Depends
 from starlette.responses import JSONResponse
-from schemas import ProductSchema, CartSchema, UserLoginSchema, DefaultResponse, UserSignUp
+from schemas import ProductSchema, CartSchema, UserLoginSchema, DefaultResponse, UserSignUp, UserRegular
 from fake_db import listUsers, listToken, listProducts, listOrder, listOfProductInCart
 from uuid import uuid4
 from datetime import datetime, timedelta
@@ -36,7 +37,7 @@ async def read_users_token():
     return JSONResponse(content=content)
 
 
-async def get_current_user(username: str, password: str) -> dict:
+async def get_user(username: str, password: str) -> dict:
     for user in listUsers:
         if user["username"] == username and user["password"] == password:
             return user
@@ -62,7 +63,7 @@ async def update_user_token(user_id: int) -> dict:
 
 @app.post("/api/login", response_model=DefaultResponse, tags=["auth"])
 async def api_login(user: UserLoginSchema, response: Response):
-    user = await get_current_user(username=user.username, password=hash_password(user.password))
+    user = await get_user(username=user.username, password=hash_password(user.password))
 
     user_token = await update_user_token(user_id=user["user_id"])
     response.set_cookie(key="user_token", value=user_token["acces_token"], httponly=True)
@@ -126,6 +127,24 @@ async def api_home(request: Request):
         raise HTTPException(status_code=401, detail=detail)
 
     return {"result": True, "message": f"Добро пожаловать!", "data": {}}
+
+
+# async def get_current_user(token=Cookie()):
+#     if token is not None:
+#         user = await get_user_by_token(token=token)
+#         if user:
+#             return user
+#     detail = {"result": False, "message": "Неавторизованный пользователь!", "data": {}}
+#     raise HTTPException(status_code=401, detail=detail)
+#
+#
+# async def get_user_by_token(token: UUID4):
+#     user = next((user for user in listToken if user["acces_token"] == token), None)
+#     if user:
+#         return UserRegular(user_id=user["user_id"], acces_token=user["acces_token"], expire=user["expire"])
+#     else:
+#         detail = {"result": False, "message": "Не верный токен!", "data": {}}
+#         raise HTTPException(status_code=401, detail=detail)
 
 
 @app.get("/api/products", tags=["products"])
