@@ -129,33 +129,15 @@ async def api_home(request: Request):
     return {"result": True, "message": f"Добро пожаловать!", "data": {}}
 
 
-# async def get_current_user(token=Cookie()):
-#     if token is not None:
-#         user = await get_user_by_token(token=token)
-#         if user:
-#             return user
-#     detail = {"result": False, "message": "Неавторизованный пользователь!", "data": {}}
-#     raise HTTPException(status_code=401, detail=detail)
-#
-#
-# async def get_user_by_token(token: UUID4):
-#     user = next((user for user in listToken if user["acces_token"] == token), None)
-#     if user:
-#         return user
-#     else:
-#         detail = {"result": False, "message": "Не верный токен!", "data": {}}
-#         raise HTTPException(status_code=401, detail=detail)
-
-
 @app.get("/api/products", tags=["products"])
 async def read_products(request: Request):
-    access_token = request.cookies.get("user_token")
+    token = request.cookies.get("user_token")
 
-    if not access_token:
+    if not token:
         detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
         raise HTTPException(status_code=401, detail=detail)
 
-    check_token = next((token for token in listToken if token["access_token"] == access_token and token["expire"] > datetime.utcnow()), None)
+    check_token = next((t for t in listToken if t["access_token"] == token and t["expire"] > datetime.utcnow()), None)
     if check_token:
         content = {"result": True, "message": "Успешно, список товаров был просмотрен!",
                    "data": sorted(listProducts, key=lambda x: x["product_id"])}
@@ -179,13 +161,18 @@ async def read_product(product_id: int, request: Request):
         detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
         raise HTTPException(status_code=401, detail=detail)
 
-    product = await get_product_by_id(product_id=product_id)
-    if product is None:
-        detail = {"result": False, "message": "Ошибка, товар с таким идентификатором не найден!", "data": {}}
-        raise HTTPException(status_code=404, detail=detail)
+    check_token = next((t for t in listToken if t["access_token"] == token and t["expire"] > datetime.utcnow()), None)
+    if check_token:
+        product = await get_product_by_id(product_id=product_id)
+        if product is None:
+            detail = {"result": False, "message": "Ошибка, товар с таким идентификатором не найден!", "data": {}}
+            raise HTTPException(status_code=404, detail=detail)
 
-    content = {"result": True, "message": "Успешно, товар был просмотрен!", "data": product}
-    return JSONResponse(content=content)
+        content = {"result": True, "message": "Успешно, товар был просмотрен!", "data": product}
+        return JSONResponse(content=content)
+    else:
+        detail = {"result": False, "message": "Ваш токен истек, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)
 
 
 @app.post("/api/products", tags=["products"])
@@ -196,14 +183,19 @@ async def create_product(product: ProductSchema, request: Request):
         detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
         raise HTTPException(status_code=401, detail=detail)
 
-    if any(j["product_id"] == product.product_id for j in listProducts):
-        detail = {"result": False, "message": "Ошибка, товар с таким идентификатором уже существует!", "data": {}}
-        raise HTTPException(status_code=400, detail=detail)
+    check_token = next((t for t in listToken if t["access_token"] == token and t["expire"] > datetime.utcnow()), None)
+    if check_token:
+        if any(j["product_id"] == product.product_id for j in listProducts):
+            detail = {"result": False, "message": "Ошибка, товар с таким идентификатором уже существует!", "data": {}}
+            raise HTTPException(status_code=400, detail=detail)
 
-    listProducts.append(product.dict())
-    content = {"result": True, "message": f"Вы успешно добавили товар - {product.name_product.lower()}!",
-               "data": product.name_product}
-    return JSONResponse(content=content)
+        listProducts.append(product.dict())
+        content = {"result": True, "message": f"Вы успешно добавили товар - {product.name_product.lower()}!",
+                   "data": product.name_product}
+        return JSONResponse(content=content)
+    else:
+        detail = {"result": False, "message": "Ваш токен истек, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)
 
 
 @app.get("/api/cart", tags=["cart"])
@@ -214,9 +206,14 @@ async def read_cart(request: Request):
         detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
         raise HTTPException(status_code=401, detail=detail)
 
-    content = {"result": True, "message": "Просмотр корзины совершенно успешно!",
-               "data": sorted(listOfProductInCart, key=lambda x: x["product_id"])}
-    return JSONResponse(content=content)
+    check_token = next((t for t in listToken if t["access_token"] == token and t["expire"] > datetime.utcnow()), None)
+    if check_token:
+        content = {"result": True, "message": "Просмотр корзины совершенно успешно!",
+                   "data": sorted(listOfProductInCart, key=lambda x: x["product_id"])}
+        return JSONResponse(content=content)
+    else:
+        detail = {"result": False, "message": "Ваш токен истек, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)
 
 
 @app.post("/api/cart/{product_id}", tags=["cart"])
@@ -227,14 +224,19 @@ async def create_product_to_cart_by_id(product_id: int, request: Request):
         detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
         raise HTTPException(status_code=401, detail=detail)
 
-    product = await get_product_by_id(product_id=product_id)
-    cart = CartSchema(product_id=product["product_id"], name_product=product["name_product"])
-    listOfProductInCart.append(cart.dict())
+    check_token = next((t for t in listToken if t["access_token"] == token and t["expire"] > datetime.utcnow()), None)
+    if check_token:
+        product = await get_product_by_id(product_id=product_id)
+        cart = CartSchema(product_id=product["product_id"], name_product=product["name_product"])
+        listOfProductInCart.append(cart.dict())
 
-    content = {"result": True,
-               "message": f'Вы успешно добавили товар - {product.get("name_product").lower()} в корзину!',
-               "data": product["name_product"]}
-    return JSONResponse(content=content)
+        content = {"result": True,
+                   "message": f'Вы успешно добавили товар - {product.get("name_product").lower()} в корзину!',
+                   "data": product["name_product"]}
+        return JSONResponse(content=content)
+    else:
+        detail = {"result": False, "message": "Ваш токен истек, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)
 
 
 @app.post("/api/cart", tags=["cart"])
@@ -245,10 +247,15 @@ async def create_an_order_from_the_cart(request: Request):
         detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
         raise HTTPException(status_code=401, detail=detail)
 
-    data = [listOrder.append(i) for i in listOfProductInCart]
-    listOfProductInCart.clear()
-    content = {"result": True, "message": "Заказ был успешно оформлен!", "data": data}
-    return JSONResponse(content=content)
+    check_token = next((t for t in listToken if t["access_token"] == token and t["expire"] > datetime.utcnow()), None)
+    if check_token:
+        data = [listOrder.append(i) for i in listOfProductInCart]
+        listOfProductInCart.clear()
+        content = {"result": True, "message": "Заказ был успешно оформлен!", "data": data}
+        return JSONResponse(content=content)
+    else:
+        detail = {"result": False, "message": "Ваш токен истек, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)
 
 
 @app.get("/api/order", tags=["order"])
@@ -259,6 +266,11 @@ async def get_order(request: Request):
         detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
         raise HTTPException(status_code=401, detail=detail)
 
-    content = {"result": True, "message": "Заказ был успешно просмотрен!",
-               "data": sorted(listOrder, key=lambda x: x['product_id'])}
-    return JSONResponse(content=content)
+    check_token = next((t for t in listToken if t["access_token"] == token and t["expire"] > datetime.utcnow()), None)
+    if check_token:
+        content = {"result": True, "message": "Заказ был успешно просмотрен!",
+                   "data": sorted(listOrder, key=lambda x: x['product_id'])}
+        return JSONResponse(content=content)
+    else:
+        detail = {"result": False, "message": "Ваш токен истек, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)

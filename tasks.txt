@@ -14,3 +14,21 @@
 # Если у токена время жизни закончилось, то обновляем его в списке.
 
 # (???для каждого пользователя сделать свои товары???)
+
+
+# async def get_current_user(token=Cookie()):
+#     if token is not None:
+#         user = await get_user_by_token(token=token)
+#         if user:
+#             return user
+#     detail = {"result": False, "message": "Неавторизованный пользователь!", "data": {}}
+#     raise HTTPException(status_code=401, detail=detail)
+#
+#
+# async def get_user_by_token(token: UUID4):
+#     user = next((user for user in listToken if user["acces_token"] == token), None)
+#     if user:
+#         return user
+#     else:
+#         detail = {"result": False, "message": "Не верный токен!", "data": {}}
+#         raise HTTPException(status_code=401, detail=detail)
