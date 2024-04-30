@@ -53,7 +53,7 @@ async def create_user_token(user_id: dict) -> dict:
 
 async def update_user_token(user_id: dict) -> dict:
     token = next((token for token in db.listToken if token["user_id"] == user_id["user_id"]), None)
-    if token is not None:
+    if token is not None and datetime.utcnow() > token["expire"]:
         token["expire"] = datetime.utcnow() + timedelta(minutes=1)
         return token
 
