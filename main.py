@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi import Request, Cookie, Response
 from starlette.responses import JSONResponse
 from schemas import ProductSchema, CartSchema, UserLoginSchema, DefaultResponse, UserSignUp
-import fake_db as db
+from fake_db import listUsers, listToken, listProducts, listOrder, listOfProductInCart
 from uuid import uuid4
 from datetime import datetime, timedelta
 
@@ -20,7 +20,7 @@ def hash_password(password: str) -> str:
 @app.get("/api/users", tags=["auth"])
 async def read_users():
     content = {"result": True, "message": "Успешно, список пользователей был просмотрен!",
-               "data": sorted(db.listUsers, key=lambda x: x["user_id"])}
+               "data": sorted(listUsers, key=lambda x: x["user_id"])}
     return JSONResponse(content=content)
 
 
@@ -30,75 +30,67 @@ async def read_users_token():
              "acces_token": token["acces_token"],
              "expire": token["expire"].isoformat(),
              "datetime_create": token["datetime_create"].isoformat()}
-            for token in sorted(db.listToken, key=lambda x: x["user_id"])]
+            for token in sorted(listToken, key=lambda x: x["user_id"])]
 
     content = {"result": True, "message": "Успешно, список токенов был просмотрен!", "data": data}
     return JSONResponse(content=content)
 
 
 async def get_current_user(username: str, password: str) -> dict:
-    for user in db.listUsers:
+    for user in listUsers:
         if user["username"] == username and user["password"] == password:
             return user
     detail = {"result": False, "message": "Ошибка, неверный логин или пароль!", "data": {}}
     raise HTTPException(status_code=404, detail=detail)
 
 
-async def create_user_token(user_id: dict) -> dict:
-    new_token = {"user_id": user_id["user_id"], "acces_token": str(uuid4()),
-                 "expire": datetime.utcnow() + timedelta(minutes=1), "datetime_create": datetime.utcnow()}
-    db.listToken.append(new_token)
-    return new_token
-
-
-async def update_user_token(user_id: dict) -> dict:
-    token = next((token for token in db.listToken if token["user_id"] == user_id["user_id"]), None)
-    if token is not None and datetime.utcnow() > token["expire"]:
-        token["expire"] = datetime.utcnow() + timedelta(minutes=1)
-        return token
+async def update_user_token(user_id: int) -> dict:
+    check_token = next((token for token in listToken if token["user_id"] == user_id), None)
+    if check_token is None:
+        new_token = {"user_id": user_id, "acces_token": str(uuid4()),
+                     "expire": datetime.utcnow() + timedelta(minutes=1), "datetime_create": datetime.utcnow()}
+        listToken.append(new_token)
+        return new_token
+    else:
+        if datetime.utcnow() > check_token["expire"]:
+            check_token["acces_token"] = str(uuid4())
+            check_token["expire"] = datetime.utcnow() + timedelta(minutes=1)
+            return check_token
+        else:
+            return check_token
 
 
 @app.post("/api/login", response_model=DefaultResponse, tags=["auth"])
-async def api_login(user: UserLoginSchema, request: Request, response: Response):
+async def api_login(user: UserLoginSchema, response: Response):
     user = await get_current_user(username=user.username, password=hash_password(user.password))
-    print(user)
 
-    access_token = request.cookies.get("user_token")
-
-    if access_token is None:
-        new_token = await create_user_token(user_id=user)
-        print(new_token)
-        response.set_cookie(key="user_token", value=new_token["acces_token"], httponly=True)
-    else:
-        updated_token = await update_user_token(user_id=user)
-        print(updated_token)
-        if updated_token is not None:
-            response.set_cookie(key="user_token", value=updated_token["acces_token"], httponly=True)
+    user_token = await update_user_token(user_id=user["user_id"])
+    response.set_cookie(key="user_token", value=user_token["acces_token"], httponly=True)
 
     return {"result": True, "message": "Вы успешно авторизовались!", "data": {}}
 
 
-async def get_user_by_username(username: str) -> str:
-    for user in db.listUsers:
+async def get_user_by_username(username: str) -> dict:
+    for user in listUsers:
         if user["username"] == username:
             return user
 
 
-async def get_user_by_email(email: str) -> str:
-    for user in db.listUsers:
+async def get_user_by_email(email: str) -> dict:
+    for user in listUsers:
         if user["email"] == email:
             return user
 
 
 async def create_new_user(username: str, email: str, password: str) -> dict:
-    last_user_id = max([user["user_id"] for user in db.listUsers]) + 1 if db.listUsers else 0
+    last_user_id = max([user["user_id"] for user in listUsers]) + 1 if listUsers else 0
     new_user = {"user_id": last_user_id, "username": username, "email": email, "password": password}
-    db.listUsers.append(new_user)
+    listUsers.append(new_user)
     return new_user
 
 
 @app.post("/api/signup", response_model=DefaultResponse, tags=["auth"])
-async def api_signup(user: UserSignUp, response: Response):
+async def api_signup(user: UserSignUp):
     if await get_user_by_username(username=user.username):
         detail = {"result": False, "message": "Ошибка, это имя уже занято!", "data": {}}
         raise HTTPException(status_code=409, detail=detail)
@@ -107,11 +99,7 @@ async def api_signup(user: UserSignUp, response: Response):
         detail = {"result": False, "message": "Ошибка, эта почта уже занята!", "data": {}}
         raise HTTPException(status_code=409, detail=detail)
 
-    new_user = await create_new_user(username=user.username, email=user.email, password=hash_password(user.password))
-    print(new_user)
-    user_token = await create_user_token(user_id=new_user)
-    print(user_token)
-    response.set_cookie(key="user_token", value=user_token["acces_token"], httponly=True)
+    await create_new_user(username=user.username, email=user.email, password=hash_password(user.password))
 
     return {"result": True, "message": "Вы успешно зарегистрировались!", "data": {}}
 
@@ -125,14 +113,6 @@ async def api_logout(response: Response, request: Request):
         raise HTTPException(status_code=401, detail=detail)
 
     response.delete_cookie(key="user_token")
-    print(response.__dict__)
-
-    # if access_token:
-    #     user_token = next((ut for ut in db.listToken if ut["acces_token"] == access_token), None)
-    #     if user_token:
-    #         db.listToken.remove(user_token)
-    #     response.delete_cookie(key="user_token")
-    #     print(response.__dict__)
 
     return {"result": True, "message": "Выход выполнен успешно!", "data": {}}
 
@@ -145,146 +125,116 @@ async def api_home(request: Request):
         detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
         raise HTTPException(status_code=401, detail=detail)
 
-    print(access_token)
-
     return {"result": True, "message": f"Добро пожаловать!", "data": {}}
 
 
 @app.get("/api/products", tags=["products"])
 async def read_products(request: Request):
-    try:
-        token = request.cookies.get("user_token")
+    token = request.cookies.get("user_token")
 
-        if not token:
-            detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
-            raise HTTPException(status_code=401, detail=detail)
+    if not token:
+        detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)
 
-        content = {"result": True, "message": "Успешно, список товаров был просмотрен!",
-                   "data": sorted(db.listProducts, key=lambda x: x["product_id"])}
-        return JSONResponse(content=content)
-    except Exception as ex:
-        detail = {"result": False, "message": f"Ошибка при просмотре списка товаров: {ex}!", "data": {}}
-        raise HTTPException(status_code=404, detail=detail)
+    content = {"result": True, "message": "Успешно, список товаров был просмотрен!",
+               "data": sorted(listProducts, key=lambda x: x["product_id"])}
+    return JSONResponse(content=content)
 
 
-async def get_product_by_id(product_id: int) -> int:
-    for product in db.listProducts:
+async def get_product_by_id(product_id: int) -> dict:
+    for product in listProducts:
         if product["product_id"] == product_id:
             return product
 
 
 @app.get("/api/products/{product_id}", tags=["products"])
 async def read_product(product_id: int, request: Request):
-    try:
-        token = request.cookies.get("user_token")
+    token = request.cookies.get("user_token")
 
-        if not token:
-            detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
-            raise HTTPException(status_code=401, detail=detail)
+    if not token:
+        detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)
 
-        product = await get_product_by_id(product_id=product_id)
-        if product is None:
-            detail = {"result": False, "message": "Ошибка, товар с таким идентификатором не найден!", "data": {}}
-            raise HTTPException(status_code=404, detail=detail)
-
-        content = {"result": True, "message": "Успешно, товар был просмотрен!", "data": product}
-        return JSONResponse(content=content)
-    except Exception as ex:
-        detail = {"result": False, "message": f"Ошибка при просмотре товара: {ex}!", "data": {}}
+    product = await get_product_by_id(product_id=product_id)
+    if product is None:
+        detail = {"result": False, "message": "Ошибка, товар с таким идентификатором не найден!", "data": {}}
         raise HTTPException(status_code=404, detail=detail)
+
+    content = {"result": True, "message": "Успешно, товар был просмотрен!", "data": product}
+    return JSONResponse(content=content)
 
 
 @app.post("/api/products", tags=["products"])
 async def create_product(product: ProductSchema, request: Request):
-    try:
-        token = request.cookies.get("user_token")
+    token = request.cookies.get("user_token")
 
-        if not token:
-            detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
-            raise HTTPException(status_code=401, detail=detail)
+    if not token:
+        detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)
 
-        if any(j["product_id"] == product.product_id for j in db.listProducts):
-            detail = {"result": False, "message": "Ошибка, товар с таким идентификатором уже существует!", "data": {}}
-            raise HTTPException(status_code=400, detail=detail)
+    if any(j["product_id"] == product.product_id for j in listProducts):
+        detail = {"result": False, "message": "Ошибка, товар с таким идентификатором уже существует!", "data": {}}
+        raise HTTPException(status_code=400, detail=detail)
 
-        db.listProducts.append(product.dict())
-        content = {"result": True, "message": f"Вы успешно добавили товар - {product.name_product.lower()}!",
-                   "data": product.name_product}
-        return JSONResponse(content=content)
-    except Exception as ex:
-        detail = {"result": False, "message": f"Ошибка при добавлении товара: {ex}!", "data": {}}
-        raise HTTPException(status_code=404, detail=detail)
+    listProducts.append(product.dict())
+    content = {"result": True, "message": f"Вы успешно добавили товар - {product.name_product.lower()}!",
+               "data": product.name_product}
+    return JSONResponse(content=content)
 
 
 @app.get("/api/cart", tags=["cart"])
 async def read_cart(request: Request):
-    try:
-        token = request.cookies.get("user_token")
+    token = request.cookies.get("user_token")
 
-        if not token:
-            detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
-            raise HTTPException(status_code=401, detail=detail)
+    if not token:
+        detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)
 
-        content = {"result": True, "message": "Просмотр корзины совершенно успешно!",
-                   "data": sorted(db.listOfProductInCart, key=lambda x: x["product_id"])}
-        return JSONResponse(content=content)
-    except Exception as ex:
-        detail = {"result": False, "message": f"Ошибка просмотра корзины: {ex}!", "data": {}}
-        raise HTTPException(status_code=404, detail=detail)
+    content = {"result": True, "message": "Просмотр корзины совершенно успешно!",
+               "data": sorted(listOfProductInCart, key=lambda x: x["product_id"])}
+    return JSONResponse(content=content)
 
 
 @app.post("/api/cart/{product_id}", tags=["cart"])
 async def create_product_to_cart_by_id(product_id: int, request: Request):
-    try:
-        token = request.cookies.get("user_token")
+    token = request.cookies.get("user_token")
 
-        if not token:
-            detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
-            raise HTTPException(status_code=401, detail=detail)
+    if not token:
+        detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)
 
-        product = await get_product_by_id(product_id=product_id)
-        cart = CartSchema(product_id=product["product_id"], name_product=product["name_product"])
-        db.listOfProductInCart.append(cart.dict())
+    product = await get_product_by_id(product_id=product_id)
+    cart = CartSchema(product_id=product["product_id"], name_product=product["name_product"])
+    listOfProductInCart.append(cart.dict())
 
-        content = {"result": True,
-                   "message": f'Вы успешно добавили товар - {product.get("name_product").lower()} в корзину!',
-                   "data": product["name_product"]}
-        return JSONResponse(content=content)
-    except Exception as ex:
-        detail = {"result": False, "message": f"Ошибка добавления товара в корзину: {ex}!", "data": {}}
-        raise HTTPException(status_code=404, detail=detail)
+    content = {"result": True,
+               "message": f'Вы успешно добавили товар - {product.get("name_product").lower()} в корзину!',
+               "data": product["name_product"]}
+    return JSONResponse(content=content)
 
 
 @app.post("/api/cart", tags=["cart"])
 async def create_an_order_from_the_cart(request: Request):
-    try:
-        token = request.cookies.get("user_token")
+    token = request.cookies.get("user_token")
 
-        if not token:
-            detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
-            raise HTTPException(status_code=401, detail=detail)
+    if not token:
+        detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)
 
-        data = [db.listOrder.append(i) for i in db.listOfProductInCart]
-        db.listOfProductInCart.clear()
-        content = {"result": True, "message": "Заказ был успешно оформлен!", "data": data}
-        return JSONResponse(content=content)
-    except Exception as ex:
-        detail = {"result": False, "message": f"Ошибка оформления заказа в корзине: {ex}!", "data": {}}
-        raise HTTPException(status_code=404, detail=detail)
+    data = [listOrder.append(i) for i in listOfProductInCart]
+    listOfProductInCart.clear()
+    content = {"result": True, "message": "Заказ был успешно оформлен!", "data": data}
+    return JSONResponse(content=content)
 
 
 @app.get("/api/order", tags=["order"])
 async def get_order(request: Request):
-    try:
-        token = request.cookies.get("user_token")
+    token = request.cookies.get("user_token")
 
-        if not token:
-            detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
-            raise HTTPException(status_code=401, detail=detail)
+    if not token:
+        detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)
 
-        content = {"result": True, "message": "Заказ был успешно просмотрен!",
-                   "data": sorted(db.listOrder, key=lambda x: x['product_id'])}
-        return JSONResponse(content=content)
-    except Exception as ex:
-        detail = {"result": False, "message": f"Ошибка при просмотре заказа: {ex}!", "data": {}}
-        raise HTTPException(status_code=404, detail=detail)
+    content = {"result": True, "message": "Заказ был успешно просмотрен!",
+               "data": sorted(listOrder, key=lambda x: x['product_id'])}
+    return JSONResponse(content=content)
