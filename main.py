@@ -155,13 +155,13 @@ async def read_products(request: Request):
         detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
         raise HTTPException(status_code=401, detail=detail)
 
-    check_token = next((token for token in listToken if token["access_token"] == access_token), None)
+    check_token = next((token for token in listToken if token["access_token"] == access_token and token["expire"] > datetime.utcnow()), None)
     if check_token:
         content = {"result": True, "message": "Успешно, список товаров был просмотрен!",
                    "data": sorted(listProducts, key=lambda x: x["product_id"])}
         return JSONResponse(content=content)
     else:
-        detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
+        detail = {"result": False, "message": "Ваш токен истек, войдите в систему!", "data": {}}
         raise HTTPException(status_code=401, detail=detail)
 
 
