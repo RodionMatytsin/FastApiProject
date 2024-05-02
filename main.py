@@ -13,9 +13,7 @@ app = FastAPI(title="Online service on FastAPI")
 
 
 def hash_password(password: str) -> str:
-    h = hashlib.new('sha256')
-    h.update(password.encode('utf-8'))
-    return h.hexdigest()
+    return hashlib.sha256(password.encode()).hexdigest()
 
 
 @app.get("/api/users", tags=["auth"])
