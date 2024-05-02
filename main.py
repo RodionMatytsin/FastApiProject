@@ -18,18 +18,20 @@ def hash_password(password: str) -> str:
 
 @app.get("/api/users", tags=["auth"])
 async def read_users():
-    content = {"result": True, "message": "Успешно, список пользователей был просмотрен!",
-               "data": sorted(listUsers, key=lambda x: x["user_id"])}
+    data = sorted(listUsers, key=lambda x: x["user_id"])
+    content = {"result": True, "message": "Успешно, список пользователей был просмотрен!", "data": data}
     return JSONResponse(content=content)
 
 
 @app.get("/api/users_token", tags=["auth"])
 async def read_users_token():
-    data = [{"user_id": token["user_id"],
-             "access_token": token["access_token"],
-             "expire": token["expire"].isoformat(),
-             "datetime_create": token["datetime_create"].isoformat()}
-            for token in sorted(listToken, key=lambda x: x["user_id"])]
+    data = [
+        {"user_id": token["user_id"],
+         "access_token": token["access_token"],
+         "expire": token["expire"].isoformat(),
+         "datetime_create": token["datetime_create"].isoformat()}
+        for token in sorted(listToken, key=lambda x: x["user_id"])
+    ]
 
     content = {"result": True, "message": "Успешно, список токенов был просмотрен!", "data": data}
     return JSONResponse(content=content)
@@ -46,8 +48,12 @@ async def get_user(username: str, password: str) -> dict:
 async def update_user_token(user_id: int) -> dict:
     check_token = next((token for token in listToken if token["user_id"] == user_id), None)
     if check_token is None:
-        new_token = {"user_id": user_id, "access_token": str(uuid4()),
-                     "expire": datetime.utcnow() + timedelta(weeks=1), "datetime_create": datetime.utcnow()}
+        new_token = {
+            "user_id": user_id,
+            "access_token": str(uuid4()),
+            "expire": datetime.utcnow() + timedelta(weeks=1),
+            "datetime_create": datetime.utcnow()
+        }
         listToken.append(new_token)
         return new_token
     else:
@@ -70,15 +76,11 @@ async def api_login(user: UserLoginSchema, response: Response):
 
 
 async def get_user_by_username(username: str) -> dict:
-    for user in listUsers:
-        if user["username"] == username:
-            return user
+    return next((user for user in listUsers if user["username"] == username), None)
 
 
 async def get_user_by_email(email: str) -> dict:
-    for user in listUsers:
-        if user["email"] == email:
-            return user
+    return next((user for user in listUsers if user["email"] == email), None)
 
 
 async def create_new_user(username: str, email: str, password: str) -> dict:
@@ -101,6 +103,10 @@ async def api_signup(user: UserSignUp):
     await create_new_user(username=user.username, email=user.email, password=hash_password(user.password))
 
     return {"result": True, "message": "Вы успешно зарегистрировались!", "data": {}}
+
+
+async def get_user_token(request: Request) -> str:
+    return request.cookies.get("user_token")
 
 
 @app.get('/api/logout', response_model=DefaultResponse, tags=["auth"])
@@ -132,12 +138,9 @@ async def api_home(request: Request):
         raise HTTPException(status_code=401, detail=detail)
 
 
-async def get_user_token(request: Request) -> str:
-    return request.cookies.get("user_token")
-
-
 async def get_check_token(access_token: str) -> str:
-    return next((t for t in listToken if t["access_token"] == access_token and t["expire"] > datetime.utcnow()), None)
+    return next((token for token in listToken
+                 if token["access_token"] == access_token and token["expire"] > datetime.utcnow()), None)
 
 
 @app.get("/api/products", tags=["products"])
@@ -202,6 +205,7 @@ async def read_product(product_id: int, request: Request):
         if product is None:
             detail = {"result": False, "message": "Ошибка, товар с таким идентификатором не найден!", "data": {}}
             raise HTTPException(status_code=404, detail=detail)
+
         content = {"result": True, "message": "Успешно, товар был просмотрен!", "data": product}
         return JSONResponse(content=content)
     else:
@@ -210,7 +214,7 @@ async def read_product(product_id: int, request: Request):
 
 
 async def get_user_token_by_id(access_token: str) -> int:
-    return next((token['user_id'] for token in listToken if token['access_token'] == access_token), None)
+    return next((token["user_id"] for token in listToken if token["access_token"] == access_token), None)
 
 
 @app.get("/api/cart", tags=["cart"])
@@ -224,11 +228,14 @@ async def read_cart(request: Request):
     check_token = await get_check_token(access_token=token)
     if check_token:
         user_id = await get_user_token_by_id(access_token=token)
-        data = [{"product_id": cart["product_id"],
-                 "name_product": cart["name_product"],
-                 "user_id": cart["user_id"]}
-                for cart in sorted(listOfProductInCart, key=lambda x: x["product_id"])
-                if cart["user_id"] == user_id]
+        data = [
+            {"product_id": cart["product_id"],
+             "name_product": cart["name_product"],
+             "user_id": cart["user_id"]}
+            for cart in sorted(listOfProductInCart, key=lambda x: x["product_id"])
+            if cart["user_id"] == user_id
+        ]
+
         content = {"result": True, "message": "Просмотр корзины совершенно успешно!", "data": data}
         return JSONResponse(content=content)
     else:
@@ -284,6 +291,7 @@ async def create_an_order_from_the_cart(request: Request):
         data = [listOrder.append(cart) for cart in listOfProductInCart if cart["user_id"] == user_id]
         for _ in range(len(data)):
             [listOfProductInCart.remove(cart) for cart in listOfProductInCart if cart["user_id"] == user_id]
+
         content = {"result": True, "message": "Заказ был успешно оформлен!", "data": data}
         return JSONResponse(content=content)
     else:
@@ -302,11 +310,14 @@ async def get_order(request: Request):
     check_token = await get_check_token(access_token=token)
     if check_token:
         user_id = await get_user_token_by_id(access_token=token)
-        data = [{"product_id": order["product_id"],
-                 "name_product": order["name_product"],
-                 "user_id": order["user_id"]}
-                for order in sorted(listOrder, key=lambda x: x["product_id"])
-                if order["user_id"] == user_id]
+        data = [
+            {"product_id": order["product_id"],
+             "name_product": order["name_product"],
+             "user_id": order["user_id"]}
+            for order in sorted(listOrder, key=lambda x: x["product_id"])
+            if order["user_id"] == user_id
+        ]
+
         content = {"result": True, "message": "Заказ был успешно просмотрен!", "data": data}
         return JSONResponse(content=content)
     else:
