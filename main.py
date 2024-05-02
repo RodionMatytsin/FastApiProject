@@ -26,10 +26,12 @@ async def read_users():
 @app.get("/api/users_token", tags=["auth"])
 async def read_users_token():
     data = [
-        {"user_id": token["user_id"],
-         "access_token": token["access_token"],
-         "expire": token["expire"].isoformat(),
-         "datetime_create": token["datetime_create"].isoformat()}
+        {
+            "user_id": token["user_id"],
+            "access_token": token["access_token"],
+            "expire": token["expire"].isoformat(),
+            "datetime_create": token["datetime_create"].isoformat()
+        }
         for token in sorted(listToken, key=lambda x: x["user_id"])
     ]
 
@@ -229,9 +231,11 @@ async def read_cart(request: Request):
     if check_token:
         user_id = await get_user_token_by_id(access_token=token)
         data = [
-            {"product_id": cart["product_id"],
-             "name_product": cart["name_product"],
-             "user_id": cart["user_id"]}
+            {
+                "product_id": cart["product_id"],
+                "name_product": cart["name_product"],
+                "user_id": cart["user_id"]
+            }
             for cart in sorted(listOfProductInCart, key=lambda x: x["product_id"])
             if cart["user_id"] == user_id
         ]
@@ -311,9 +315,11 @@ async def get_order(request: Request):
     if check_token:
         user_id = await get_user_token_by_id(access_token=token)
         data = [
-            {"product_id": order["product_id"],
-             "name_product": order["name_product"],
-             "user_id": order["user_id"]}
+            {
+                "product_id": order["product_id"],
+                "name_product": order["name_product"],
+                "user_id": order["user_id"]
+            }
             for order in sorted(listOrder, key=lambda x: x["product_id"])
             if order["user_id"] == user_id
         ]
