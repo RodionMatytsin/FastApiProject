@@ -86,6 +86,14 @@ async def get_user_by_email(email: str) -> dict:
 
 
 async def create_new_user(username: str, email: str, password: str) -> dict:
+    if await get_user_by_username(username=username):
+        detail = {"result": False, "message": "Ошибка, это имя уже занято!", "data": {}}
+        raise HTTPException(status_code=409, detail=detail)
+
+    if await get_user_by_email(email=email):
+        detail = {"result": False, "message": "Ошибка, эта почта уже занята!", "data": {}}
+        raise HTTPException(status_code=409, detail=detail)
+
     last_user_id = max([user["user_id"] for user in listUsers]) + 1 if listUsers else 0
     new_user = {"user_id": last_user_id, "username": username, "email": email, "password": password}
     listUsers.append(new_user)
@@ -94,14 +102,6 @@ async def create_new_user(username: str, email: str, password: str) -> dict:
 
 @app.post("/api/signup", response_model=DefaultResponse, tags=["auth"])
 async def api_signup(user: UserSignUp):
-    if await get_user_by_username(username=user.username):
-        detail = {"result": False, "message": "Ошибка, это имя уже занято!", "data": {}}
-        raise HTTPException(status_code=409, detail=detail)
-
-    if await get_user_by_email(email=user.email):
-        detail = {"result": False, "message": "Ошибка, эта почта уже занята!", "data": {}}
-        raise HTTPException(status_code=409, detail=detail)
-
     await create_new_user(username=user.username, email=user.email, password=hash_password(user.password))
 
     return {"result": True, "message": "Вы успешно зарегистрировались!", "data": {}}
