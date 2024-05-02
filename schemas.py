@@ -1,13 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
 
 
-class ProductSchema(BaseModel):
-    product_id: int = Field()
-    name_product: str = Field()
-
-
-class CartSchema(BaseModel):
-    product_id: int = Field()
+class CreateProductSchema(BaseModel):
     name_product: str = Field()
 
 
