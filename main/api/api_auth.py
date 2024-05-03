@@ -10,7 +10,6 @@ from main.utils.auth import get_user, update_user_token, create_new_user
 @app.post("/api/login", response_model=DefaultResponse, tags=["auth"])
 async def api_login(user: UserLoginSchema, response: Response):
     user = await get_user(username=user.username, password=hash_password(user.password))
-
     user_token = await update_user_token(user_id=user["user_id"])
     response.set_cookie(key="user_token", value=user_token["access_token"], httponly=True)
 

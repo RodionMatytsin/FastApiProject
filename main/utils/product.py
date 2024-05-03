@@ -1,4 +1,5 @@
-from main.models.fake_db import listProducts, listOfProductInCart, listUsers
+from fastapi import HTTPException
+from main.models.fake_db import listProducts, listUsers
 
 
 async def create_new_product(product: str) -> dict:
@@ -12,7 +13,13 @@ async def get_product_by_id(product_id: int) -> dict:
     return next((product for product in listProducts if product["product_id"] == product_id), None)
 
 
-async def add_product_to_cart(product_id: int, name_product: str, user_id: int) -> dict:
-    new_product_in_cart = {"product_id": product_id, "name_product": name_product, "user_id": user_id}
-    listOfProductInCart.append(new_product_in_cart)
-    return new_product_in_cart
+async def get_products() -> list:
+    return sorted(listProducts, key=lambda x: x["product_id"])
+
+
+async def get_product(product_id: int) -> dict:
+    product = await get_product_by_id(product_id=product_id)
+    if product is None:
+        detail = {"result": False, "message": "Ошибка, товар с таким идентификатором не найден!", "data": {}}
+        raise HTTPException(status_code=404, detail=detail)
+    return product

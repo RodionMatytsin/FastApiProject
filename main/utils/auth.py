@@ -60,9 +60,6 @@ async def get_user_token(request: Request) -> str:
     return request.cookies.get("user_token")
 
 
-async def get_check_token(access_token: str) -> str:
-    return next((t for t in listToken if t["access_token"] == access_token and t["expire"] > datetime.utcnow()), None)
-
-
-async def get_user_token_by_id(access_token: str) -> int:
-    return next((token["user_id"] for token in listToken if token["access_token"] == access_token), None)
+async def get_check_token(access_token: str) -> int:
+    return next((token["user_id"] for token in listToken
+                 if token["access_token"] == access_token and token["expire"] > datetime.utcnow()), None)

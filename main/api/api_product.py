@@ -3,8 +3,7 @@ from fastapi import HTTPException, Request
 from starlette.responses import JSONResponse
 from main.schemas.product import CreateProductSchema
 from main.utils.auth import get_user_token, get_check_token
-from main.utils.product import create_new_product, get_product_by_id
-from main.models.fake_db import listProducts
+from main.utils.product import get_products, create_new_product, get_product
 
 
 @app.get("/api/products", tags=["products"])
@@ -17,8 +16,8 @@ async def read_products(request: Request):
 
     check_token = await get_check_token(access_token=token)
     if check_token:
-        content = {"result": True, "message": "Успешно, список товаров был просмотрен!",
-                   "data": sorted(listProducts, key=lambda x: x["product_id"])}
+        data = await get_products()
+        content = {"result": True, "message": "Успешно, список товаров был просмотрен!", "data": data}
         return JSONResponse(content=content)
     else:
         detail = {"result": False, "message": "Ваш токен истек, войдите в систему!", "data": {}}
@@ -54,12 +53,8 @@ async def read_product(product_id: int, request: Request):
 
     check_token = await get_check_token(access_token=token)
     if check_token:
-        product = await get_product_by_id(product_id=product_id)
-        if product is None:
-            detail = {"result": False, "message": "Ошибка, товар с таким идентификатором не найден!", "data": {}}
-            raise HTTPException(status_code=404, detail=detail)
-
-        content = {"result": True, "message": "Успешно, товар был просмотрен!", "data": product}
+        data = await get_product(product_id=product_id)
+        content = {"result": True, "message": "Успешно, товар был просмотрен!", "data": data}
         return JSONResponse(content=content)
     else:
         detail = {"result": False, "message": "Ваш токен истек, войдите в систему!", "data": {}}
