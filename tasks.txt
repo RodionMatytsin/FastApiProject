@@ -4,34 +4,15 @@
 # сделать единобразие кода +
 # добавить авторизацию для пользователя, для всех методов добавить куки +
 # сделать регистрацию (для каждого user должен быть id) +
-
 # Сделать через куки авторизацию пользователя +
 # при входе в систему проверять токен пользователя, если нет такого то добаляем пользователя ... +
 # Нужно хранить время жизни токена +
-
 # Для методов login и signup переделать создание и проверку токена. +
 # При регистрации у user создается токен, время его жизни и токен сохраняется в списке listToken. +
 # При авторизации у user берется созданный токен из списка listToken и проверяется в списке listUsers пользователь. +
 # Если у токена время жизни закончилось, то обновляем его в списке. +
 # для каждого пользователя сделать свои товары +
+# Сделать файл утилиты +
 
-# Сделать файл утилиты -
-
-
-
-# async def get_current_user(token=Cookie()):
-#     if token is not None:
-#         user = await get_user_by_token(token=token)
-#         if user:
-#             return user
-#     detail = {"result": False, "message": "Неавторизованный пользователь!", "data": {}}
-#     raise HTTPException(status_code=401, detail=detail)
-#
-#
-# async def get_user_by_token(token: UUID4):
-#     user = next((user for user in listToken if user["acces_token"] == token), None)
-#     if user:
-#         return user
-#     else:
-#         detail = {"result": False, "message": "Не верный токен!", "data": {}}
-#         raise HTTPException(status_code=401, detail=detail)
+# Команды:
+# pip freeze > requirements.txt
