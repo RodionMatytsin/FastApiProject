@@ -1,0 +1,14 @@
+.hello {
+    text-align: center;
+}
+
+footer {
+    background-color: #111111;
+}
+
+.copyright {
+    color: whitesmoke;
+    text-align: center;
+    background-color: #111111;
+    padding: 15px 10px 10px 10px;
+}
