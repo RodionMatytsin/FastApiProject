@@ -63,3 +63,20 @@ async def get_user_token(request: Request) -> str:
 async def get_check_token(access_token: str) -> int:
     return next((token["user_id"] for token in listToken
                  if token["access_token"] == access_token and token["expire"] > datetime.utcnow()), None)
+
+
+async def authenticate_user(request: Request) -> bool:
+    token = await get_user_token(request=request)
+    if not token:
+        detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)
+    check_token = await get_check_token(access_token=token)
+    if check_token:
+        return True
+    else:
+        detail = {"result": False, "message": "Ваш токен истек, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)
+
+
+async def get_user_id(request: Request) -> int:
+    return await get_check_token(await get_user_token(request))
