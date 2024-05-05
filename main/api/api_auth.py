@@ -22,12 +22,12 @@ async def api_signup(user: UserSignUp):
 
 @app.get('/api/logout', response_model=DefaultResponse, tags=["auth"])
 async def api_logout(response: Response, request: Request):
-    if await authenticate_user(request):
-        response.delete_cookie(key="user_token")
-        return {"result": True, "message": "Выход выполнен успешно!", "data": {}}
+    await authenticate_user(request)
+    response.delete_cookie(key="user_token")
+    return {"result": True, "message": "Выход выполнен успешно!", "data": {}}
 
 
 @app.get('/api/home', response_model=DefaultResponse, tags=["auth"])
 async def api_home(request: Request):
-    if await authenticate_user(request):
-        return {"result": True, "message": "Добро пожаловать!", "data": {}}
+    await authenticate_user(request)
+    return {"result": True, "message": "Добро пожаловать!", "data": {}}

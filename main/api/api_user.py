@@ -1,5 +1,5 @@
 from main import app
-from main.utils.user import get_users, get_users_token
+from main.utils.auth import get_users, get_users_token
 
 
 @app.get("/api/users", tags=["user"])

@@ -16,23 +16,18 @@ async def get_cart(user_id: int) -> list:
     return data
 
 
-async def add_product_to_cart(product_id: int, name_product: str, user_id: int) -> dict:
-    new_product_in_cart = {"product_id": product_id, "name_product": name_product, "user_id": user_id}
+async def add_product_to_cart_by_id(product_id: int, user_id: int) -> dict:
+    product = await get_product(product_id=product_id)
+    new_product_in_cart = {
+        "product_id": product["product_id"],
+        "name_product": product["name_product"],
+        "user_id": user_id
+    }
     listOfProductInCart.append(new_product_in_cart)
     return new_product_in_cart
 
 
-async def add_product_to_cart_by_id(product_id: int, user_id: int) -> dict:
-    product = await get_product(product_id=product_id)
-    new_product = await add_product_to_cart(
-        product_id=product["product_id"],
-        name_product=product["name_product"],
-        user_id=user_id
-    )
-    return new_product
-
-
-async def add_an_order_from_the_cart(user_id: int) -> list:
+async def add_order_from_cart(user_id: int) -> list:
     data = [listOrder.append(cart) for cart in listOfProductInCart if cart["user_id"] == user_id]
     for _ in range(len(data)):
         [listOfProductInCart.remove(cart) for cart in listOfProductInCart if cart["user_id"] == user_id]
