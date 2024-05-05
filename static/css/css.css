@@ -1,6 +1,11 @@
 .hello {
     text-align: center;
-    font-size: 14pt;
+    font-size: 14px;
+}
+
+img {
+    width: 800px;
+    height: auto;
 }
 
 footer {
