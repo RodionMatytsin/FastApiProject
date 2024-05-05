@@ -1,5 +1,6 @@
 .hello {
     text-align: center;
+    font-size: 14pt;
 }
 
 footer {
@@ -11,4 +12,8 @@ footer {
     text-align: center;
     background-color: #111111;
     padding: 15px 10px 10px 10px;
+}
+
+.copyright h4 {
+    font-size: 18px;
 }
