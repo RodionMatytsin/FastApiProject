@@ -1,13 +1,14 @@
 from pydantic import BaseModel
 
 
-class DefaultResponseDict(BaseModel):
+class BaseResponse(BaseModel):
     result: bool
     message: str
+
+
+class ResponseDict(BaseResponse):
     data: dict
 
 
-class DefaultResponseList(BaseModel):
-    result: bool
-    message: str
+class ResponseList(BaseResponse):
     data: list
