@@ -1,8 +1,8 @@
 function handleLoginSubmit(event) {
     event.preventDefault();
-    const formdata = new FormData(event.target);
-    const loginUsername = formdata.get('username');
-    const loginPassword = formdata.get('password');
+    const formLoginData = new FormData(event.target);
+    const loginUsername = formLoginData.get('username');
+    const loginPassword = formLoginData.get('password');
 
     fetch('/api/login', {
         method: 'POST',
@@ -21,10 +21,10 @@ function handleLoginSubmit(event) {
 
 function handleSigUpSubmit(event) {
     event.preventDefault();
-    const formdata = new FormData(event.target);
-    const regisUsername = formdata.get('username');
-    const regisEmail = formdata.get('email');
-    const regisPassword = formdata.get('password');
+    const formSigUpData = new FormData(event.target);
+    const regisUsername = formSigUpData.get('username');
+    const regisEmail = formSigUpData.get('email');
+    const regisPassword = formSigUpData.get('password');
 
     fetch('/api/signup', {
         method: 'POST',
