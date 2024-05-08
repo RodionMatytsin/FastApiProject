@@ -16,3 +16,23 @@
 
 # Команды:
 # pip freeze > requirements.txt
+# pip install Jinja2 --upgrade
+
+
+
+function handleLogoutClick() {
+            fetch('/api/logout', {
+                method: 'GET',
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                alert(data.message);
+                document.cookie = 'user_token=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+document.getElementById('logoutButton').addEventListener('click', handleLogoutClick);
