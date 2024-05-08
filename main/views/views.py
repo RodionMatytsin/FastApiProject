@@ -26,3 +26,8 @@ async def before_request(request: Request, call_next):
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse("index.html", context={"request": request})
+
+
+@app.get("/products", response_class=HTMLResponse)
+async def products(request: Request):
+    return templates.TemplateResponse("product.html", context={"request": request})
