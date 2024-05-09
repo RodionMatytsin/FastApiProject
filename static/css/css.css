@@ -23,6 +23,12 @@
     --bs-btn-disabled-border-color: black;
 }
 
+.stroke {
+    padding: 10px;
+    border: 0.08rem solid black;
+    border-radius: 18px;
+}
+
 .classH2 {
     padding: 8px;
     text-align: center;
