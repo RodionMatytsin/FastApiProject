@@ -1,5 +1,9 @@
-.nav-link:hover {
-    color: black;
+.px-2 {
+    padding-right: 1.5rem !important;
+}
+
+.nav-link {
+    font-size: 1.2rem;
 }
 
 .btn-primary {
