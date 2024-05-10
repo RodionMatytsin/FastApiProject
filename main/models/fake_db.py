@@ -18,21 +18,47 @@ listProducts = [
         "product_id": 2,
         "name_product": "Молоко"
     },
-{
+    {
         "product_id": 4,
         "name_product": "Рыба"
     },
-{
+    {
         "product_id": 5,
         "name_product": "Бекон"
     },
-{
+    {
         "product_id": 6,
         "name_product": "Йогурт"
     },
 ]
 
-listOfProductInCart = []
+listOfProductInCart = [
+    {
+        "product_id": 1,
+        "name_product": "Мясо",
+        "user_id": 1
+    },
+    {
+        "product_id": 2,
+        "name_product": "Молоко",
+        "user_id": 1
+    },
+    {
+        "product_id": 3,
+        "name_product": "Картофель",
+        "user_id": 1
+    },
+    {
+        "product_id": 3,
+        "name_product": "Картофель",
+        "user_id": 3
+    },
+    {
+        "product_id": 4,
+        "name_product": "Рыба",
+        "user_id": 3
+    }
+]
 
 listOrder = []
 
