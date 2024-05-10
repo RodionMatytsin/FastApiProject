@@ -17,7 +17,19 @@ listProducts = [
     {
         "product_id": 2,
         "name_product": "Молоко"
-    }
+    },
+{
+        "product_id": 4,
+        "name_product": "Рыба"
+    },
+{
+        "product_id": 5,
+        "name_product": "Бекон"
+    },
+{
+        "product_id": 6,
+        "name_product": "Йогурт"
+    },
 ]
 
 listOfProductInCart = []

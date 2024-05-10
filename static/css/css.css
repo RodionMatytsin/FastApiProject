@@ -6,6 +6,10 @@
     font-size: 1.2rem;
 }
 
+.p-5 {
+    padding: 2rem !important;
+}
+
 .btn-primary {
     --bs-btn-color: whitesmoke;
     --bs-btn-bg: black;

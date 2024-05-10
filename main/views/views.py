@@ -33,6 +33,11 @@ async def products(request: Request):
     return templates.TemplateResponse("product.html", context={"request": request})
 
 
+@app.get("/cart", response_class=HTMLResponse)
+async def cart(request: Request):
+    return templates.TemplateResponse("cart.html", context={"request": request})
+
+
 @app.get("/users", response_class=HTMLResponse)
 async def users(request: Request):
     return templates.TemplateResponse("users.html", context={"request": request})
