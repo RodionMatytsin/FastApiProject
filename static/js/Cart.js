@@ -40,6 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.result === true) {
                 cartTable.innerHTML = '';
                 fetchData('/api/cart').then(displayCartTable);
+            } else {
+                alert("Ошибка при добавлении продукта: " + data.message);
             }
         }).catch(error => console.error('Ошибка при добавление данных:', error));
     });
