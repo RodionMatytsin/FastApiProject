@@ -21,8 +21,29 @@
         </div>
     </header>
 
+    <form id="add-product-form">
+        <div class="container py-5 h-100">
+            <div class="row d-flex justify-content-center align-items-center h-100">
+                <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                    <div class="card shadow-2-strong" style="border-radius: 1rem;">
+                        <div class="card-body p-5 text-center">
+
+                            <h3 class="mb-5">Форма добавления продуктов</h3>
+                            <div data-mdb-input-init class="form-outline mb-4">
+                                <input type="text" name="name_product" placeholder="Введите название товара" class="form-control form-control-lg" />
+                            </div>
+                            <button data-mdb-button-init data-mdb-ripple-init class="btn btn-primary btn-lg btn-block" type="submit">Добавить продукт</button>
+                            <button data-mdb-button-init data-mdb-ripple-init id="clearButton" class="btn btn-primary btn-lg btn-block" type="button">Очистить поле</button>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
     <div class="container">
-        <div class="stroke mt-3 mb-3">
+        <div class="stroke mb-3">
             <h2 class="classH2">Таблица продуктов</h2>
             <table id="products-table"></table>
         </div>
