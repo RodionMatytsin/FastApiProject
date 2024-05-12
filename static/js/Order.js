@@ -13,7 +13,7 @@ function displayCartTable(data) {
             row.insertCell(2).textContent = cart.user_id;
         });
     } else {
-        orderTable.insertRow().insertCell(0).textContent = 'Корзина пользователя не найдена';
+        orderTable.insertRow().insertCell(0).textContent = 'Заказ пользователя не найден';
     }
 }
 
