@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }).catch(error => console.error('Ошибка при добавление данных:', error));
     });
 
-    document.getElementById('checkoutButton').addEventListener('click', function (event){
+    document.getElementById('checkoutForm').addEventListener('submit', function (event){
         event.preventDefault();
         fetch('/api/cart', {
             method: 'POST',
@@ -53,9 +53,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }).then(response => response.json()).then(data => {
             if (data.result === true) {
+                alert(data.message);
                 cartTable.innerHTML = '';
                 fetchData('/api/cart').then(displayCartTable);
+            } else {
+                alert("Ошибка при оформлении заказа: " + data.message);
             }
-       }).catch((error) => {console.error('Error:', error)});
+       }).catch((error) => {
+           console.error('Error:', error);
+           alert("Произошла ошибка при оформлении заказа. Пожалуйста, попробуйте позже.");
+       });
     });
 });
