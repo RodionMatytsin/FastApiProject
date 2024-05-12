@@ -38,6 +38,11 @@ async def cart(request: Request):
     return templates.TemplateResponse("cart.html", context={"request": request})
 
 
+@app.get("/order", response_class=HTMLResponse)
+async def order(request: Request):
+    return templates.TemplateResponse("order.html", context={"request": request})
+
+
 @app.get("/users", response_class=HTMLResponse)
 async def users(request: Request):
     return templates.TemplateResponse("users.html", context={"request": request})

@@ -1,19 +1,19 @@
-const table = document.getElementById('products-table');
+const procuctTable = document.getElementById('products-table');
 
 function fetchData(url) {
     return fetch(url).then(response => response.json());
 }
 
 function displayProductsTable(data) {
-    table.innerHTML = '<tbody><tr><td>ID продукта</td><td>Название продукта</td></tr></tbody>';
+    procuctTable.innerHTML = '<tbody><tr><td>ID продукта</td><td>Название продукта</td></tr></tbody>';
     if (data && Array.isArray(data.data)) {
         data.data.forEach(product => {
-            const row = table.insertRow();
+            const row = procuctTable.insertRow();
             row.insertCell(0).textContent = product.product_id;
             row.insertCell(1).textContent = product.name_product;
         });
     } else {
-        table.insertRow().insertCell(0).textContent = 'Продукты не найдены';
+        procuctTable.insertRow().insertCell(0).textContent = 'Продукты не найдены';
     }
 }
 
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
             body: JSON.stringify({"name_product": name_product})
         }).then(response => response.json()).then(data => {
             if (data.result === true) {
-                table.innerHTML = '';
+                procuctTable.innerHTML = '';
                 fetchData('/api/products').then(displayProductsTable);
             }
         }).catch(error => console.error('Ошибка при добавление данных:', error));
