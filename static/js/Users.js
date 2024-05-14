@@ -5,7 +5,7 @@ function fetchData(url) {
 function displayUsersTable(data) {
     const table = document.getElementById('users-table');
     table.innerHTML = '<tbody><tr><td>ID пользователя</td><td>Имя пользователя</td><td>Электронная почта</td><td>Пароль</td></tr></tbody>';
-    if (data && data.data) {
+    if (data && Array.isArray(data.data)) {
         data.data.forEach(user => {
             const row = table.insertRow();
             row.insertCell(0).textContent = user.user_id;
@@ -21,7 +21,7 @@ function displayUsersTable(data) {
 function displayTokensTable(data) {
     const table = document.getElementById('tokens-table');
     table.innerHTML = '<tbody><tr><td>ID пользователя</td><td>Токен доступа</td><td>Время истечения</td><td>Дата и время создания</td></tr></tbody>';
-    if (data && data.data) {
+    if (data && Array.isArray(data.data)) {
         data.data.forEach(token => {
             const row = table.insertRow();
             row.insertCell(0).textContent = token.user_id;
