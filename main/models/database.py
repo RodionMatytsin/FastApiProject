@@ -25,8 +25,8 @@ class Users(Base):
 class Tokens(Base):
     __tablename__ = 'Tokens'
     id = Column(BigInteger, primary_key=True)
-    token = Column(UUID(as_uuid=False), unique=True, nullable=False,
-                   index=True, server_default=text('uuid_generate_v4()'))
+    access_token = Column(UUID(as_uuid=False), unique=True, nullable=False,
+                          index=True, server_default=text('uuid_generate_v4()'))
     datetime_create = Column(DateTime, default=func.now(), nullable=False)
     expires = Column(DateTime, nullable=False)
 
@@ -74,3 +74,14 @@ engine = create_async_engine(
     )
 
 Session = async_sessionmaker(engine, expire_on_commit=False)
+
+
+async def query_execute(query_text: str, fetch_all: bool = False, type_query: str = 'read'):
+    async with Session() as db:
+        print(query_text, fetch_all, type_query)
+        query_object = await db.execute(text(query_text))
+        if type_query == 'read':
+            return query_object.fetchall() if fetch_all else query_object.fetchone()
+        else:
+            await db.execute(text('commit'))
+            return True
