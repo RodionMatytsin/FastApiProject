@@ -31,7 +31,7 @@ class Tokens(Base):
     expires = Column(DateTime, nullable=False)
 
     # Foreign Key
-    user_id = Column(BigInteger, ForeignKey(Users.id), nullable=False)
+    user_id = Column(BigInteger, ForeignKey(f'{Users.id}'), nullable=False)
 
 
 class Products(Base):
@@ -45,8 +45,8 @@ class Carts(Base):
     id = Column(BigInteger, primary_key=True)
 
     # Foreign Key
-    product_id = Column(BigInteger, ForeignKey(Products.id), nullable=False)
-    user_id = Column(BigInteger, ForeignKey(Users.id), nullable=False)
+    product_id = Column(BigInteger, ForeignKey(f'{Products.id}'), nullable=False)
+    user_id = Column(BigInteger, ForeignKey(f'{Users.id}'), nullable=False)
 
 
 class Orders(Base):
@@ -54,9 +54,9 @@ class Orders(Base):
     id = Column(BigInteger, primary_key=True)
 
     # Foreign Key
-    cart_id = Column(BigInteger, ForeignKey(Carts.id), nullable=False)
-    product_id = Column(BigInteger, ForeignKey(Products.id), nullable=False)
-    user_id = Column(BigInteger, ForeignKey(Users.id), nullable=False)
+    cart_id = Column(BigInteger, ForeignKey(f'{Carts.id}'), nullable=False)
+    product_id = Column(BigInteger, ForeignKey(f'{Products.id}'), nullable=False)
+    user_id = Column(BigInteger, ForeignKey(f'{Users.id}'), nullable=False)
 
 
 engine = create_async_engine(
