@@ -1,5 +1,5 @@
 from main import app
-from fastapi import HTTPException, Request
+from fastapi import Request
 from main.schemas.response import ResponseList, ResponseDict
 from main.utils.auth import authenticate_user, get_user_id
 from main.utils.cart import get_cart, add_product_to_cart_by_id, add_order_from_cart

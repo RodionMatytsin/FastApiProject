@@ -1,5 +1,5 @@
 from main import app
-from fastapi import HTTPException, Request
+from fastapi import Request
 from main.schemas.response import ResponseList
 from main.utils.auth import authenticate_user, get_user_id
 from main.utils.order import get_order

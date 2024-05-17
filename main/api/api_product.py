@@ -1,5 +1,5 @@
 from main import app
-from fastapi import HTTPException, Request
+from fastapi import Request
 from main.schemas.response import ResponseList, ResponseDict
 from main.schemas.product import CreateProductSchema
 from main.utils.auth import authenticate_user
