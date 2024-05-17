@@ -23,15 +23,15 @@ function handleSigUpSubmit(event) {
     event.preventDefault();
     const formSigUpData = new FormData(event.target);
     const regisUsername = formSigUpData.get('username');
-    const regisEmail = formSigUpData.get('email');
     const regisPassword = formSigUpData.get('password');
+    const regisEmail = formSigUpData.get('email');
 
     fetch('/api/signup', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({"username": regisUsername, "email": regisEmail, "password": regisPassword})
+        body: JSON.stringify({"username": regisUsername, "password": regisPassword, "email": regisEmail})
     }).then(response => response.json()).then(data => {
         console.log('Success:', data);
         alert(data.message);

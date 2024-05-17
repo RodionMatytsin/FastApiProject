@@ -4,14 +4,14 @@ function fetchData(url) {
 
 function displayUsersTable(data) {
     const table = document.getElementById('users-table');
-    table.innerHTML = '<tbody><tr><td>ID пользователя</td><td>Имя пользователя</td><td>Электронная почта</td><td>Пароль</td></tr></tbody>';
+    table.innerHTML = '<tbody><tr><td>ID пользователя</td><td>Имя пользователя</td><td>Пароль</td><td>Электронная почта</td></tr></tbody>';
     if (data && Array.isArray(data.data)) {
         data.data.forEach(user => {
             const row = table.insertRow();
-            row.insertCell(0).textContent = user.user_id;
+            row.insertCell(0).textContent = user.id;
             row.insertCell(1).textContent = user.username;
-            row.insertCell(2).textContent = user.email;
-            row.insertCell(3).textContent = user.password;
+            row.insertCell(2).textContent = user.password;
+            row.insertCell(3).textContent = user.email;
         });
     } else {
         table.insertRow().insertCell(0).textContent = 'Пользователи не найдены';
@@ -20,14 +20,15 @@ function displayUsersTable(data) {
 
 function displayTokensTable(data) {
     const table = document.getElementById('tokens-table');
-    table.innerHTML = '<tbody><tr><td>ID пользователя</td><td>Токен доступа</td><td>Время истечения</td><td>Дата и время создания</td></tr></tbody>';
+    table.innerHTML = '<tbody><tr><td>ID токена</td><td>Токен доступа</td><td>Дата и время создания</td><td>Время истечения</td><td>ID user</td></tr></tbody>';
     if (data && Array.isArray(data.data)) {
         data.data.forEach(token => {
             const row = table.insertRow();
-            row.insertCell(0).textContent = token.user_id;
+            row.insertCell(0).textContent = token.id;
             row.insertCell(1).textContent = token.access_token;
-            row.insertCell(2).textContent = token.expire;
-            row.insertCell(3).textContent = token.datetime_create;
+            row.insertCell(2).textContent = token.datetime_create;
+            row.insertCell(3).textContent = token.expires;
+            row.insertCell(4).textContent = token.user_id;
         });
     } else {
         table.insertRow().insertCell(0).textContent = 'Токены не найдены';
