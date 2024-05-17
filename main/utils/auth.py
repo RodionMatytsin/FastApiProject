@@ -20,15 +20,17 @@ async def get_u(username: str, password: str) -> UserRegular:
         fetch_all=False,
         type_query='read'
     )
-    if user is not None:
-        return UserRegular(
-            id=user.id,
-            username=user.username,
-            password=user.password,
-            email=user.email
-        )
-    detail = {"result": False, "message": "Ошибка, неверный логин или пароль!", "data": {}}
-    raise HTTPException(status_code=404, detail=detail)
+
+    if user is None:
+        detail = {"result": False, "message": "Ошибка, неверный логин или пароль!", "data": {}}
+        raise HTTPException(status_code=404, detail=detail)
+
+    return UserRegular(
+        id=user.id,
+        username=user.username,
+        password=user.password,
+        email=user.email
+    )
 
 
 async def get_user(username: str, password: str) -> dict:
@@ -48,8 +50,8 @@ async def update_u_t(user_id: int):
     if check_token is None:
         await query_execute(
             query_text=f'INSERT INTO "Tokens" (access_token, datetime_create, expires, user_id) '
-                       f'VALUES (\'{str(uuid4())}\', \'{datetime.utcnow()}\', '
-                       f'\'{datetime.utcnow() + timedelta(weeks=1)}\', {user_id})',
+                       f'VALUES (\'{str(uuid4())}\', \'{datetime.now()}\', '
+                       f'\'{datetime.now() + timedelta(weeks=1)}\', {user_id})',
             fetch_all=False,
             type_query='insert'
         )
@@ -60,12 +62,11 @@ async def update_u_t(user_id: int):
         )
         return get_new_token.access_token
     else:
-        if datetime.utcnow() > check_token.expires:
+        if datetime.now() > check_token.expires:
             new_token = str(uuid4())
             await query_execute(
                 query_text=f'UPDATE "Tokens" AS T '
-                           f'SET (access_token, expires) = '
-                           f'(\'{new_token}\', \'{datetime.utcnow() + timedelta(weeks=1)}\') '
+                           f'SET access_token = \'{new_token}\', expires = \'{datetime.now() + timedelta(weeks=1)}\' '
                            f'WHERE T.user_id = {user_id}',
                 fetch_all=False,
                 type_query='update'
@@ -81,21 +82,21 @@ async def update_user_token(user_id: int) -> dict:
         new_token = {
             "user_id": user_id,
             "access_token": str(uuid4()),
-            "expire": datetime.utcnow() + timedelta(weeks=1),
-            "datetime_create": datetime.utcnow()
+            "expire": datetime.now() + timedelta(weeks=1),
+            "datetime_create": datetime.now()
         }
         listToken.append(new_token)
         return new_token
     else:
-        if datetime.utcnow() > check_token["expire"]:
+        if datetime.now() > check_token["expire"]:
             check_token["access_token"] = str(uuid4())
-            check_token["expire"] = datetime.utcnow() + timedelta(weeks=1)
+            check_token["expire"] = datetime.now() + timedelta(weeks=1)
             return check_token
         else:
             return check_token
 
 
-async def get_u_by_username(username: str) -> UserRegular | bool:
+async def get_u_by_username(username: str) -> UserRegular | None:
     user = await query_execute(
         query_text=f'SELECT '
                    f'U.id, '
@@ -114,10 +115,10 @@ async def get_u_by_username(username: str) -> UserRegular | bool:
             password=user.password,
             email=user.email
         )
-    return False
+    return None
 
 
-async def get_u_by_email(email: str) -> UserRegular | bool:
+async def get_u_by_email(email: str) -> UserRegular | None:
     user = await query_execute(
         query_text=f'SELECT '
                    f'U.id, '
@@ -136,7 +137,7 @@ async def get_u_by_email(email: str) -> UserRegular | bool:
             password=user.password,
             email=user.email
         )
-    return False
+    return None
 
 
 async def create_new_u(username: str, password: str, email: str):
@@ -148,12 +149,16 @@ async def create_new_u(username: str, password: str, email: str):
         detail = {"result": False, "message": "Ошибка, эта почта уже занята!", "data": {}}
         raise HTTPException(status_code=409, detail=detail)
 
-    await query_execute(
-        query_text=f'INSERT INTO "Users" (username, password, email) '
-                   f'VALUES (\'{escape(username)}\', \'{password}\', \'{escape(email)}\')',
-        fetch_all=False,
-        type_query='insert'
-    )
+    try:
+        await query_execute(
+            query_text=f'INSERT INTO "Users" (username, password, email) '
+                       f'VALUES (\'{escape(username)}\', \'{password}\', \'{escape(email)}\')',
+            fetch_all=False,
+            type_query='insert'
+        )
+    except Exception as e:
+        detail = {"result": False, "message": f"Произошла ошибка при создании пользователя - {e}.", "data": {}}
+        raise HTTPException(status_code=500, detail=detail)
 
 
 async def get_user_by_username(username: str) -> dict:
@@ -183,9 +188,36 @@ async def get_user_token(request: Request) -> str:
     return request.cookies.get("user_token")
 
 
+async def get_check_t(access_token: str) -> int | None:
+    user_id = await query_execute(
+        query_text=f'SELECT '
+                   f'T.id '
+                   f'FROM "Tokens" AS T '
+                   f'WHERE T.access_token = \'{access_token}\' AND T.expires > \'{datetime.now()}\'',
+        fetch_all=False,
+        type_query='read'
+    )
+    if user_id is not None:
+        return user_id
+    return None
+
+
 async def get_check_token(access_token: str) -> int:
     return next((token["user_id"] for token in listToken
-                 if token["access_token"] == access_token and token["expire"] > datetime.utcnow()), None)
+                 if token["access_token"] == access_token and token["expire"] > datetime.now()), None)
+
+
+async def auth_user(request: Request) -> bool:
+    token = await get_user_token(request=request)
+    if not token:
+        detail = {"result": False, "message": "Пожалуйста, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)
+    check_token = await get_check_t(access_token=token)
+    if check_token:
+        return True
+    else:
+        detail = {"result": False, "message": "Ваш токен истек, войдите в систему!", "data": {}}
+        raise HTTPException(status_code=401, detail=detail)
 
 
 async def authenticate_user(request: Request) -> bool:
@@ -205,8 +237,20 @@ async def get_user_id(request: Request) -> int:
     return await get_check_token(await get_user_token(request))
 
 
+async def get_u_id(request: Request) -> int:
+    return await get_check_t(await get_user_token(request))
+
+
 async def get_users() -> list:
     return sorted(listUsers, key=lambda x: x["user_id"])
+
+
+async def get_us():
+    return await query_execute(
+        query_text='SELECT * FROM "Users" AS U ORDER BY U.id',
+        fetch_all=True,
+        type_query='read'
+    )
 
 
 async def get_users_token() -> list:
@@ -220,3 +264,11 @@ async def get_users_token() -> list:
         for token in sorted(listToken, key=lambda x: x["user_id"])
     ]
     return data
+
+
+async def get_us_token():
+    return await query_execute(
+        query_text='SELECT * FROM "Tokens" AS T ORDER BY T.id',
+        fetch_all=True,
+        type_query='read'
+    )
