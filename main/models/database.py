@@ -2,7 +2,7 @@ from sqlalchemy import Column, BigInteger, String, DateTime, UUID, ForeignKey
 from sqlalchemy import func, text
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncAttrs
-import main.config as config
+from main.config import DATABASE_USER, DATABASE_PASSWORD, DATABASE_IP, DATABASE_PORT, DATABASE_NAME
 import hashlib
 
 
@@ -60,10 +60,10 @@ class Orders(Base):
 
 
 engine = create_async_engine(
-        f'postgresql+asyncpg://{config.DATABASE_USER}'
-        f':{config.DATABASE_PASSWORD}'
-        f'@{config.DATABASE_IP}:{config.DATABASE_PORT}'
-        f'/{config.DATABASE_NAME}',
+        f'postgresql+asyncpg://{DATABASE_USER}'
+        f':{DATABASE_PASSWORD}'
+        f'@{DATABASE_IP}:{DATABASE_PORT}'
+        f'/{DATABASE_NAME}',
         echo=False,
         pool_recycle=300,
         query_cache_size=0,
@@ -74,6 +74,11 @@ engine = create_async_engine(
     )
 
 Session = async_sessionmaker(engine, expire_on_commit=False)
+
+
+# alembic init -t async main/alembic
+# alembic revision --autogenerate -m "Database creation"
+# alembic upgrade 163541a49932
 
 
 async def query_execute(query_text: str, fetch_all: bool = False, type_query: str = 'read'):
