@@ -9,7 +9,7 @@ function displayProductsTable(data) {
     if (data && Array.isArray(data.data)) {
         data.data.forEach(product => {
             const row = procuctTable.insertRow();
-            row.insertCell(0).textContent = product.product_id;
+            row.insertCell(0).textContent = product.id;
             row.insertCell(1).textContent = product.name_product;
         });
     } else {
