@@ -8,11 +8,12 @@ async def get_products():
         query_text=f'SELECT '
                    f'P.id, '
                    f'P.name_product '
-                   f'FROM "Products" AS P ',
+                   f'FROM "Products" AS P '
+                   f'ORDER BY P.id',
         fetch_all=True,
         type_query='read'
     )
-    return [dict(id=b[0], username=b[1]) for b in data]
+    return [dict(id=i[0], name_product=i[1]) for i in data]
 
 
 async def create_new_product(product: str):
