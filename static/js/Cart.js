@@ -61,7 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }).then(response => response.json()).then(data => {
             if (data.result === true) {
                 alert(data.message);
-                cartTable.innerHTML = '';
+                const table = document.getElementById('cart-table');
+                table.innerHTML = '';
                 fetchData('/api/cart').then(displayCartTable);
             } else {
                 alert("Ошибка при оформлении заказа: " + data.message);
