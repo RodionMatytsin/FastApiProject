@@ -1,20 +1,19 @@
-const cartTable = document.getElementById('cart-table');
-
 function fetchData(url) {
     return fetch(url).then(response => response.json());
 }
 
 function displayCartTable(data) {
-    cartTable.innerHTML = '<tbody><tr><td>ID продукта</td><td>Название продукта</td><td>ID пользователя</td></tr></tbody>';
+    const table = document.getElementById('cart-table');
+    table.innerHTML = '<tbody><tr><td>ID корзины</td><td>ID продукта</td><td>ID пользователя</td></tr></tbody>';
     if (data && Array.isArray(data.data)) {
         data.data.forEach(cart => {
-            const row = cartTable.insertRow();
+            const row = table.insertRow();
             row.insertCell(0).textContent = cart.id;
             row.insertCell(1).textContent = cart.product_id;
             row.insertCell(2).textContent = cart.user_id;
         });
     } else {
-        cartTable.insertRow().insertCell(0).textContent = 'Корзина пользователя не найдена';
+        table.insertRow().insertCell(0).textContent = 'Корзина пользователя не найдена';
     }
 }
 
@@ -38,7 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
             body: JSON.stringify({"product_id": product_id})
         }).then(response => response.json()).then(data => {
             if (data.result === true) {
-                cartTable.innerHTML = '';
+                const table = document.getElementById('cart-table');
+                table.innerHTML = '';
                 fetchData('/api/cart').then(displayCartTable);
             } else {
                 alert("Ошибка при добавлении продукта: " + data.message);

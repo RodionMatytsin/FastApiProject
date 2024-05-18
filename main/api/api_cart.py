@@ -2,15 +2,14 @@ from main import app
 from fastapi import Request
 from main.schemas.response import ResponseList, ResponseDict
 from main.utils.auth import authenticate_user, get_user_id
-from main.utils.cart import add_product_to_cart_by_id
-# from main.utils.cart import get_cart, add_product_to_cart_by_id, add_order_from_cart
+from main.utils.cart import get_cart, add_product_to_cart_by_id
 
 
 @app.get("/api/cart", response_model=ResponseList, tags=["cart"])
 async def read_cart(request: Request):
     await authenticate_user(request)
-    # data = await get_cart(user_id=await get_user_id(request))
-    # return {"result": True, "message": "Просмотр корзины совершенно успешно!", "data": data}
+    data = await get_cart(user_id=await get_user_id(request))
+    return {"result": True, "message": "Просмотр корзины совершенно успешно!", "data": data}
 
 
 @app.post("/api/cart/{product_id}", response_model=ResponseDict, tags=["cart"])

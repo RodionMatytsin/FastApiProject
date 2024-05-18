@@ -4,14 +4,14 @@ from main.models.database import query_execute
 from main.models.fake_db import listOfProductInCart, listOrder
 
 
-async def get_cart(user_id: int) -> list:
+async def get_cart(user_id: int):
     data = await query_execute(
         query_text=f'SELECT '
                    f'C.id, '
                    f'C.product_id,'
                    f'C.user_id '
                    f'FROM "Carts" AS C '
-                   f'WHERE C.user_id = {user_id[0]}'
+                   f'WHERE C.user_id = {user_id[0]} '
                    f'ORDER BY C.id',
         fetch_all=True,
         type_query='read'
