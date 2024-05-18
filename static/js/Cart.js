@@ -27,21 +27,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('add-product-in-cart-form').addEventListener('submit', function (event){
         event.preventDefault();
-        const product_id = this["product_id"].value;
-        fetch('/api/cart/' + product_id, {
+        const productId = document.getElementById('product-id').value;
+        fetch('/api/cart/' + productId, {
             method: 'POST',
             headers: {
                 'Authorization': 'Basic ' + btoa('username:password'),
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({"product_id": product_id})
+            body: JSON.stringify({"product_id": productId})
         }).then(response => response.json()).then(data => {
             if (data.result === true) {
                 const table = document.getElementById('cart-table');
                 table.innerHTML = '';
                 fetchData('/api/cart').then(displayCartTable);
             } else {
-                alert("Ошибка при добавлении продукта: " + data.message);
+                const table = document.getElementById('cart-table');
+                table.innerHTML = '';
+                fetchData('/api/cart').then(displayCartTable);
             }
         }).catch(error => {
             console.error('Ошибка при добавление данных:', error);
