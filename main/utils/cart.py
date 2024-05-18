@@ -1,29 +1,32 @@
 from fastapi import HTTPException
 from main.utils.product import get_product
+from main.models.database import query_execute
 from main.models.fake_db import listOfProductInCart, listOrder
 
 
 async def get_cart(user_id: int) -> list:
-    data = [
-        {
-            "product_id": cart["product_id"],
-            "name_product": cart["name_product"],
-            "user_id": cart["user_id"]
-        }
-        for cart in sorted(listOfProductInCart, key=lambda x: x["product_id"])
-        if cart["user_id"] == user_id
-    ]
-    return data
+    data = await query_execute(
+        query_text=f'SELECT '
+                   f'C.id, '
+                   f'C.product_id,'
+                   f'C.user_id '
+                   f'FROM "Carts" AS C '
+                   f'WHERE C.user_id = {user_id[0]}'
+                   f'ORDER BY C.id',
+        fetch_all=True,
+        type_query='read'
+    )
+    return [dict(id=i[0], product_id=i[1], user_id=i[2]) for i in data]
 
 
-async def add_product_to_cart_by_id(product_id: int, user_id: int) -> dict:
+async def add_product_to_cart_by_id(product_id: int, user_id: int):
     product = await get_product(product_id=product_id)
-    new_product_in_cart = {
-        "product_id": product["product_id"],
-        "name_product": product["name_product"],
-        "user_id": user_id
-    }
-    listOfProductInCart.append(new_product_in_cart)
+    new_product_in_cart = await query_execute(
+        query_text=f'INSERT INTO "Carts" (product_id, user_id) '
+                   f'VALUES ({product[0]}, {user_id[0]})',
+        fetch_all=False,
+        type_query='insert'
+    )
     return new_product_in_cart
 
 

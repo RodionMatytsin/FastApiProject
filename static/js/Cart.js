@@ -9,8 +9,8 @@ function displayCartTable(data) {
     if (data && Array.isArray(data.data)) {
         data.data.forEach(cart => {
             const row = cartTable.insertRow();
-            row.insertCell(0).textContent = cart.product_id;
-            row.insertCell(1).textContent = cart.name_product;
+            row.insertCell(0).textContent = cart.id;
+            row.insertCell(1).textContent = cart.product_id;
             row.insertCell(2).textContent = cart.user_id;
         });
     } else {
@@ -43,7 +43,10 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 alert("Ошибка при добавлении продукта: " + data.message);
             }
-        }).catch(error => console.error('Ошибка при добавление данных:', error));
+        }).catch(error => {
+            console.error('Ошибка при добавление данных:', error);
+            alert("Произошла ошибка при добавлении продукта в корзину.");
+        });
     });
 
     document.getElementById('checkoutForm').addEventListener('submit', function (event){
