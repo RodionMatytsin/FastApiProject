@@ -1,7 +1,5 @@
-from fastapi import HTTPException
 from main.utils.product import get_product
 from main.models.database import query_execute
-from main.models.fake_db import listOfProductInCart, listOrder
 
 
 async def get_cart(user_id: int):
@@ -30,8 +28,21 @@ async def add_product_to_cart_by_id(product_id: int, user_id: int):
     return new_product_in_cart
 
 
-async def add_order_from_cart(user_id: int) -> list:
-    data = [listOrder.append(cart) for cart in listOfProductInCart if cart["user_id"] == user_id]
-    for _ in range(len(data)):
-        [listOfProductInCart.remove(cart) for cart in listOfProductInCart if cart["user_id"] == user_id]
-    return data
+async def add_order_from_cart(user_id: int):
+    orders = []
+    carts = await get_cart(user_id=user_id)
+    for cart in carts:
+        order = await query_execute(
+            query_text=f'INSERT INTO "Orders" (cart_id, product_id, user_id) '
+                       f'VALUES ({cart.get("id")}, {cart.get("product_id")}, {user_id[0]})',
+            fetch_all=False,
+            type_query='insert'
+        )
+        orders.append(order)
+    # for _ in range(len(orders)):
+    #     await query_execute(
+    #         query_text=f'DELETE FROM "Carts" WHERE user_id = {user_id[0]}',
+    #         fetch_all=False,
+    #         type_query='delete'
+    #     )
+    return orders

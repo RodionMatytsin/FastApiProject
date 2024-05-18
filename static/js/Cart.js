@@ -65,7 +65,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 table.innerHTML = '';
                 fetchData('/api/cart').then(displayCartTable);
             } else {
-                alert("Ошибка при оформлении заказа: " + data.message);
+                alert(data.message);
+                const table = document.getElementById('cart-table');
+                table.innerHTML = '';
+                fetchData('/api/cart').then(displayCartTable);
             }
        }).catch((error) => {
            console.error('Error:', error);
