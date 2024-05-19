@@ -4,17 +4,15 @@ from main.models.database import query_execute
 
 async def get_cart(user_id: int):
     data = await query_execute(
-        query_text=f'SELECT '
-                   f'C.id, '
-                   f'C.product_id,'
-                   f'C.user_id '
+        query_text=f'SELECT P.name_product AS "name_product", C.user_id AS "user_id" '
                    f'FROM "Carts" AS C '
+                   f'INNER JOIN "Products" AS P ON P.id = C.product_id '
                    f'WHERE C.user_id = {user_id[0]} '
-                   f'ORDER BY C.id',
+                   f'ORDER BY C.product_id',
         fetch_all=True,
         type_query='read'
     )
-    return [dict(id=i[0], product_id=i[1], user_id=i[2]) for i in data]
+    return [dict(name_product=i[0], user_id=i[1]) for i in data]
 
 
 async def add_product_to_cart_by_id(product_id: int, user_id: int):
@@ -30,7 +28,17 @@ async def add_product_to_cart_by_id(product_id: int, user_id: int):
 
 async def add_order_from_cart(user_id: int):
     orders = []
-    carts = await get_cart(user_id=user_id)
+    data = await query_execute(
+        query_text=f'SELECT '
+                   f'C.id, '
+                   f'C.product_id, '
+                   f'C.user_id '
+                   f'FROM "Carts" AS C '
+                   f'WHERE C.user_id = {user_id[0]}',
+        fetch_all=True,
+        type_query='read'
+    )
+    carts = [dict(id=i[0], product_id=i[1], user_id=[2]) for i in data]
     for cart in carts:
         order = await query_execute(
             query_text=f'INSERT INTO "Orders" (cart_id, product_id, user_id) '
@@ -39,10 +47,9 @@ async def add_order_from_cart(user_id: int):
             type_query='insert'
         )
         orders.append(order)
-    # for _ in range(len(orders)):
-    #     await query_execute(
-    #         query_text=f'DELETE FROM "Carts" WHERE user_id = {user_id[0]}',
-    #         fetch_all=False,
-    #         type_query='delete'
-    #     )
+    # await query_execute(
+    #     query_text=f'DELETE FROM "Carts" AS C WHERE C.user_id = {user_id[0]}',
+    #     fetch_all=False,
+    #     type_query='delete'
+    # )
     return orders

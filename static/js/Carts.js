@@ -4,13 +4,12 @@ function fetchData(url) {
 
 function displayCartTable(data) {
     const table = document.getElementById('cart-table');
-    table.innerHTML = '<tbody><tr><td>ID корзины</td><td>ID продукта</td><td>ID пользователя</td></tr></tbody>';
+    table.innerHTML = '<tbody><tr><td>Название продукта</td><td>ID пользователя</td></tr></tbody>';
     if (data && Array.isArray(data.data)) {
         data.data.forEach(cart => {
             const row = table.insertRow();
-            row.insertCell(0).textContent = cart.id;
-            row.insertCell(1).textContent = cart.product_id;
-            row.insertCell(2).textContent = cart.user_id;
+            row.insertCell(0).textContent = cart.name_product;
+            row.insertCell(1).textContent = cart.user_id;
         });
     } else {
         table.insertRow().insertCell(0).textContent = 'Корзина пользователя не найдена';
