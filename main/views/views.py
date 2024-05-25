@@ -23,26 +23,26 @@ async def before_request(request: Request, call_next):
     return response
 
 
-@app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
-    return templates.TemplateResponse("index.html", context={"request": request})
-
-
-@app.get("/products", response_class=HTMLResponse)
-async def products(request: Request):
-    return templates.TemplateResponse("product.html", context={"request": request})
-
-
-@app.get("/cart", response_class=HTMLResponse)
-async def cart(request: Request):
-    return templates.TemplateResponse("cart.html", context={"request": request})
-
-
-@app.get("/order", response_class=HTMLResponse)
-async def order(request: Request):
-    return templates.TemplateResponse("order.html", context={"request": request})
-
-
-@app.get("/users", response_class=HTMLResponse)
-async def users(request: Request):
-    return templates.TemplateResponse("users.html", context={"request": request})
+# @app.get("/", response_class=HTMLResponse)
+# async def index(request: Request):
+#     return templates.TemplateResponse("index.html", context={"request": request})
+#
+#
+# @app.get("/products", response_class=HTMLResponse)
+# async def products(request: Request):
+#     return templates.TemplateResponse("product.html", context={"request": request})
+#
+#
+# @app.get("/cart", response_class=HTMLResponse)
+# async def cart(request: Request):
+#     return templates.TemplateResponse("cart.html", context={"request": request})
+#
+#
+# @app.get("/order", response_class=HTMLResponse)
+# async def order(request: Request):
+#     return templates.TemplateResponse("order.html", context={"request": request})
+#
+#
+# @app.get("/users", response_class=HTMLResponse)
+# async def users(request: Request):
+#     return templates.TemplateResponse("users.html", context={"request": request})

@@ -1,13 +1,18 @@
-from sqlalchemy import Column, BigInteger, String, DateTime, UUID, ForeignKey
-from sqlalchemy import func, text
+from sqlalchemy import Column, DateTime, ForeignKey, Text, Boolean, String, BigInteger, SmallInteger, Time, Date
+from sqlalchemy import func, select, update, insert, case, desc, delete, null, or_, and_, text, UUID
+from typing import AsyncGenerator
+from contextlib import asynccontextmanager
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncAttrs
-from main.config import DATABASE_USER, DATABASE_PASSWORD, DATABASE_IP, DATABASE_PORT, DATABASE_NAME
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncAttrs, AsyncSession
+import main.config as config
+from datetime import datetime, time, timedelta
+from typing import Type
+from uuid import uuid4
 import hashlib
 
 
 def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
+    return hashlib.sha512(password.encode()).hexdigest()
 
 
 class Base(AsyncAttrs, DeclarativeBase):
@@ -15,15 +20,58 @@ class Base(AsyncAttrs, DeclarativeBase):
 
 
 class Users(Base):
-    __tablename__ = 'Users'
+    __tablename__ = 'users'
     id = Column(BigInteger, primary_key=True)
-    username = Column(String(length=40), nullable=False)
-    password = Column(String(length=70), nullable=False)
-    email = Column(String(length=90), nullable=False)
+    username = Column(String(length=255), nullable=False)
+    password = Column(String(length=255), nullable=False)
+    email = Column(String(length=255), nullable=False)
+
+    @classmethod
+    async def get_(cls, where_: list, type_: bool):
+        kwargs = {
+            "select_": [cls.id, cls.username, cls.password, cls.email],
+            "join_": [],
+            "where_": where_,
+            "type_": type_
+        }
+        return await Example.get_result_(kwargs=kwargs)
+
+    @classmethod
+    async def get_user_(cls, username_: str, password_: str):
+        return await cls.get_(where_=[cls.username == username_, cls.password == password_], type_=False)
+
+    @classmethod
+    async def get_user_by_email_(cls, email_: str):
+        return await cls.get_(where_=[cls.email == email_], type_=False)
+
+    @classmethod
+    async def get_user_by_username_(cls, username_: str):
+        return await cls.get_(where_=[cls.username == username_], type_=False)
+
+    @classmethod
+    async def get_user_by_user_id_(cls, user_id_: int):
+        return await cls.get_(where_=[cls.id == user_id_], type_=False)
+
+    @classmethod
+    async def get_users_(cls):
+        return await cls.get_(where_=[], type_=True)
+
+    @classmethod
+    async def add_user_(cls, username_: str, password_: str, email_: str) -> None:
+        async with get_async_session() as session:
+            await session.execute(
+                insert(
+                    Users
+                ).values(
+                    username=username_,
+                    password=password_,
+                    email=email_
+                )
+            )
 
 
 class Tokens(Base):
-    __tablename__ = 'Tokens'
+    __tablename__ = 'tokens'
     id = Column(BigInteger, primary_key=True)
     access_token = Column(UUID(as_uuid=False), unique=True, nullable=False,
                           index=True, server_default=text('uuid_generate_v4()'))
@@ -31,39 +79,121 @@ class Tokens(Base):
     expires = Column(DateTime, nullable=False)
 
     # Foreign Key
-    user_id = Column(BigInteger, ForeignKey(f'{Users.id}'), nullable=False)
+    user_id = Column(BigInteger, ForeignKey(Users.id), nullable=False)
+
+    @classmethod
+    async def get_(cls, where_: list, type_: bool):
+        kwargs = {
+            "select_": [cls.id, cls.access_token, cls.datetime_create, cls.expires, cls.user_id],
+            "join_": [],
+            "where_": where_,
+            "type_": type_
+        }
+        return await Example.get_result_(kwargs=kwargs)
+
+    @classmethod
+    async def get_user_token_(cls, user_id_: int):
+        return await cls.get_(where_=[cls.user_id == user_id_], type_=False)
+
+    @classmethod
+    async def get_check_token_(cls, token_: str):
+        return await cls.get_(where_=[cls.access_token == token_, cls.expires > datetime.now()], type_=False)
+
+    @classmethod
+    async def get_tokens_(cls):
+        return await cls.get_(where_=[], type_=True)
+
+    @classmethod
+    async def add_user_token_(cls, user_id_: int):
+        async with get_async_session() as session:
+            await session.execute(
+                insert(
+                    Tokens
+                ).values(
+                    access_token=uuid4(),
+                    datetime_create=datetime.now(),
+                    expires=datetime.now() + timedelta(weeks=1),
+                    user_id=user_id_
+                )
+            )
+
+    @classmethod
+    async def set_user_token_(cls, new_token_: str, user_id_: int):
+        async with get_async_session() as session:
+            await session.execute(
+                update(
+                    cls
+                ).where(
+                    cls.user_id == user_id_
+                ).values(
+                    access_token=new_token_,
+                    expires=datetime.now() + timedelta(weeks=1)
+                )
+            )
 
 
 class Products(Base):
-    __tablename__ = 'Products'
+    __tablename__ = 'products'
     id = Column(BigInteger, primary_key=True)
-    name_product = Column(String(length=100), nullable=False)
+    name_product = Column(String(length=255), nullable=False)
+
+    @classmethod
+    async def get_(cls, where_: list, type_: bool):
+        kwargs = {
+            "select_": [cls.id, cls.name_product],
+            "join_": [],
+            "where_": where_,
+            "type_": type_
+        }
+        return await Example.get_result_(kwargs=kwargs)
+
+    @classmethod
+    async def get_products_(cls):
+        return await cls.get_(where_=[], type_=True)
 
 
 class Carts(Base):
-    __tablename__ = 'Carts'
+    __tablename__ = 'carts'
     id = Column(BigInteger, primary_key=True)
 
     # Foreign Key
-    product_id = Column(BigInteger, ForeignKey(f'{Products.id}'), nullable=False)
-    user_id = Column(BigInteger, ForeignKey(f'{Users.id}'), nullable=False)
+    product_id = Column(BigInteger, ForeignKey(Products.id), nullable=False)
+    user_id = Column(BigInteger, ForeignKey(Users.id), nullable=False)
 
 
 class Orders(Base):
-    __tablename__ = 'Orders'
+    __tablename__ = 'orders'
     id = Column(BigInteger, primary_key=True)
 
     # Foreign Key
-    cart_id = Column(BigInteger, ForeignKey(f'{Carts.id}'), nullable=False)
-    product_id = Column(BigInteger, ForeignKey(f'{Products.id}'), nullable=False)
-    user_id = Column(BigInteger, ForeignKey(f'{Users.id}'), nullable=False)
+    cart_id = Column(BigInteger, ForeignKey(Carts.id), nullable=False)
+    product_id = Column(BigInteger, ForeignKey(Products.id), nullable=False)
+    user_id = Column(BigInteger, ForeignKey(Users.id), nullable=False)
+
+
+class Example:
+    @classmethod
+    async def get_result_(cls, kwargs: dict):
+        if not kwargs.get("join_"):
+            query = select(*kwargs.get("select_")).where(and_(*kwargs.get("where_"))) \
+                if kwargs.get("where_") else select(*kwargs.get("select_"))
+        else:
+            query = select(*kwargs.get("select_")).join(*kwargs.get("join_"), isouter=True).where(and_(*kwargs.get("where_"))) \
+                if kwargs.get("where_") else select(*kwargs.get("select_")).join(*kwargs.get("join_"), isouter=True)
+
+        async with get_async_session() as session:
+            result = await session.execute(query)
+            result = result.all() if kwargs.get("type_") else result.first()
+        if result is None:
+            return False
+        return [x for x in result] if kwargs.get("type_") else result
 
 
 engine = create_async_engine(
-        f'postgresql+asyncpg://{DATABASE_USER}'
-        f':{DATABASE_PASSWORD}'
-        f'@{DATABASE_IP}:{DATABASE_PORT}'
-        f'/{DATABASE_NAME}',
+        f'postgresql+asyncpg://{config.DATABASE_USER}'
+        f':{config.DATABASE_PASSWORD}'
+        f'@{config.DATABASE_IP}:{config.DATABASE_PORT}'
+        f'/{config.DATABASE_NAME}',
         echo=False,
         pool_recycle=300,
         query_cache_size=0,
@@ -73,20 +203,18 @@ engine = create_async_engine(
         pool_use_lifo=True
     )
 
-Session = async_sessionmaker(engine, expire_on_commit=False)
-
-
 # alembic init -t async main/alembic
-# alembic revision --autogenerate -m "Database creation"
-# alembic upgrade 163541a49932
+# alembic revision --autogenerate -m "Init Alembic"
+# alembic upgrade head
+
+async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
-async def query_execute(query_text: str, fetch_all: bool = False, type_query: str = 'read'):
-    async with Session() as db:
-        print(query_text, fetch_all, type_query)
-        query_object = await db.execute(text(query_text))
-        if type_query == 'read':
-            return query_object.fetchall() if fetch_all else query_object.fetchone()
-        else:
-            await db.execute(text('commit'))
-            return True
+@asynccontextmanager
+async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
+    async with async_session() as session:
+        try:
+            yield session
+        finally:
+            await session.commit()
+            await session.close()

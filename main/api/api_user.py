@@ -1,15 +1,14 @@
 from main import app
-from main.schemas.response import ResponseList
-from main.utils.auth import get_users, get_users_token
+from fastapi import Depends
+from main.schemas.response import DefaultResponse
+from main.utils.auth import get_users, get_tokens
 
 
-@app.get("/api/users", response_model=ResponseList, tags=["user"])
-async def read_users():
-    data = await get_users()
-    return {"result": True, "message": "Успешно, список пользователей был просмотрен!", "data": data}
+@app.get("/api/users", status_code=200, tags=["Users"])
+async def read_users(users=Depends(get_users)):
+    return DefaultResponse(data=users)
 
 
-@app.get("/api/users_token", response_model=ResponseList, tags=["user"])
-async def read_users_token():
-    data = await get_users_token()
-    return {"result": True, "message": "Успешно, список токенов был просмотрен!", "data": data}
+@app.get("/api/tokens", status_code=200, tags=["Users"])
+async def read_users_token(tokens=Depends(get_tokens)):
+    return DefaultResponse(data=tokens)

@@ -15,5 +15,4 @@ class UserSignUp(BaseModel):
 class UserRegular(BaseModel):
     id: int
     username: str
-    password: str
     email: EmailStr
