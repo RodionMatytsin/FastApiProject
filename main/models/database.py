@@ -37,23 +37,23 @@ class Users(Base):
         return await Example.get_result_(kwargs=kwargs)
 
     @classmethod
-    async def get_user_(cls, username_: str, password_: str):
+    async def get_user_(cls, username_: str, password_: str) -> object:
         return await cls.get_(where_=[cls.username == username_, cls.password == password_], type_=False)
 
     @classmethod
-    async def get_user_by_email_(cls, email_: str):
+    async def get_user_by_email_(cls, email_: str) -> object:
         return await cls.get_(where_=[cls.email == email_], type_=False)
 
     @classmethod
-    async def get_user_by_username_(cls, username_: str):
+    async def get_user_by_username_(cls, username_: str) -> object:
         return await cls.get_(where_=[cls.username == username_], type_=False)
 
     @classmethod
-    async def get_user_by_user_id_(cls, user_id_: int):
+    async def get_user_by_user_id_(cls, user_id_: int) -> object:
         return await cls.get_(where_=[cls.id == user_id_], type_=False)
 
     @classmethod
-    async def get_users_(cls):
+    async def get_users_(cls) -> list[object]:
         return await cls.get_(where_=[], type_=True)
 
     @classmethod
@@ -92,19 +92,19 @@ class Tokens(Base):
         return await Example.get_result_(kwargs=kwargs)
 
     @classmethod
-    async def get_user_token_(cls, user_id_: int):
+    async def get_user_token_(cls, user_id_: int) -> object:
         return await cls.get_(where_=[cls.user_id == user_id_], type_=False)
 
     @classmethod
-    async def get_check_token_(cls, token_: str):
+    async def get_check_token_(cls, token_: str) -> object:
         return await cls.get_(where_=[cls.access_token == token_, cls.expires > datetime.now()], type_=False)
 
     @classmethod
-    async def get_tokens_(cls):
+    async def get_tokens_(cls) -> list[object]:
         return await cls.get_(where_=[], type_=True)
 
     @classmethod
-    async def add_user_token_(cls, user_id_: int):
+    async def add_user_token_(cls, user_id_: int) -> None:
         async with get_async_session() as session:
             await session.execute(
                 insert(
@@ -118,7 +118,7 @@ class Tokens(Base):
             )
 
     @classmethod
-    async def set_user_token_(cls, new_token_: str, user_id_: int):
+    async def set_user_token_(cls, new_token_: str, user_id_: int) -> None:
         async with get_async_session() as session:
             await session.execute(
                 update(
@@ -148,8 +148,17 @@ class Products(Base):
         return await Example.get_result_(kwargs=kwargs)
 
     @classmethod
-    async def get_products_(cls):
+    async def get_products_(cls) -> list[object]:
         return await cls.get_(where_=[], type_=True)
+
+    @classmethod
+    async def get_product_(cls, product_id: int) -> object:
+        return await cls.get_(where_=[cls.id == product_id], type_=False)
+
+    @classmethod
+    async def add_product_(cls, name_product_: str) -> None:
+        async with get_async_session() as session:
+            await session.execute(insert(Products).values(name_product=name_product_))
 
 
 class Carts(Base):

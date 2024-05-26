@@ -102,7 +102,7 @@ async def get_logout_user(response: Response):
     response.delete_cookie(key="user_token")
 
 
-async def get_check_token(token_: str) -> Tokens | None:
+async def get_check_token(token_: str) -> object | None:
     check_token = await Tokens.get_check_token_(token_=token_)
     if check_token:
         return check_token
