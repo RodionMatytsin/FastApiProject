@@ -139,8 +139,3 @@ async def get_users():
 async def get_tokens():
     data = await Tokens.get_tokens_()
     return [dict(id=i[0], access_token=i[1], datetime_create=i[2], expires=i[3], user_id=i[4]) for i in data]
-
-# async def get_user_token(request: Request) -> str:
-#     return request.cookies.get("user_token")
-# async def get_user_id(request: Request) -> int:
-#     return await get_check_token(await get_user_token(request))

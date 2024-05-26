@@ -59,15 +59,11 @@ class Users(Base):
     @classmethod
     async def add_user_(cls, username_: str, password_: str, email_: str) -> None:
         async with get_async_session() as session:
-            await session.execute(
-                insert(
-                    Users
-                ).values(
-                    username=username_,
-                    password=password_,
-                    email=email_
-                )
-            )
+            await session.execute(insert(Users).values(
+                username=username_,
+                password=password_,
+                email=email_
+            ))
 
 
 class Tokens(Base):
@@ -106,30 +102,19 @@ class Tokens(Base):
     @classmethod
     async def add_user_token_(cls, user_id_: int) -> None:
         async with get_async_session() as session:
-            await session.execute(
-                insert(
-                    Tokens
-                ).values(
-                    access_token=uuid4(),
-                    datetime_create=datetime.now(),
-                    expires=datetime.now() + timedelta(weeks=1),
-                    user_id=user_id_
-                )
-            )
+            await session.execute(insert(Tokens).values(
+                access_token=uuid4(),
+                datetime_create=datetime.now(),
+                expires=datetime.now() + timedelta(weeks=1),
+                user_id=user_id_
+            ))
 
     @classmethod
     async def set_user_token_(cls, new_token_: str, user_id_: int) -> None:
         async with get_async_session() as session:
-            await session.execute(
-                update(
-                    cls
-                ).where(
-                    cls.user_id == user_id_
-                ).values(
-                    access_token=new_token_,
-                    expires=datetime.now() + timedelta(weeks=1)
-                )
-            )
+            await session.execute(update(Tokens).where(cls.user_id == user_id_).values(
+                access_token=new_token_, expires=datetime.now() + timedelta(weeks=1)
+            ))
 
 
 class Products(Base):
@@ -168,6 +153,25 @@ class Carts(Base):
     # Foreign Key
     product_id = Column(BigInteger, ForeignKey(Products.id), nullable=False)
     user_id = Column(BigInteger, ForeignKey(Users.id), nullable=False)
+
+    @classmethod
+    async def get_(cls, where_: list, type_: bool):
+        kwargs = {
+            "select_": [Products.name_product.label('name_product'), cls.user_id],
+            "join_": [Products, Products.id == cls.product_id],
+            "where_": where_,
+            "type_": type_
+        }
+        return await Example.get_result_(kwargs=kwargs)
+
+    @classmethod
+    async def get_cart_(cls, user_id: int) -> list[object]:
+        return await cls.get_(where_=[cls.user_id == user_id], type_=True)
+
+    @classmethod
+    async def add_product_to_cart_by_id_(cls, product_id_: int, user_id_: int) -> None:
+        async with get_async_session() as session:
+            await session.execute(insert(Carts).values(product_id=product_id_, user_id=user_id_))
 
 
 class Orders(Base):
