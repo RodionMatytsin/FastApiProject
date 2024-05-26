@@ -185,7 +185,7 @@ class Example:
             "where_": where_,
             "type_": type_
         }
-        return await Example.get_result_(kwargs=kwargs)
+        return await cls.get_result_(kwargs=kwargs)
 
     @classmethod
     async def get_result_(cls, kwargs: dict):
