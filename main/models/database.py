@@ -28,27 +28,27 @@ class Users(Base):
 
     @classmethod
     async def get_user_(cls, username_: str, password_: str) -> object:
-        return await Example.get_(select_=[cls.id, cls.username, cls.password, cls.email],
-                                  where_=[cls.username == username_, cls.password == password_])
+        return await Example.get_kwargs_(select_=[cls.id, cls.username, cls.password, cls.email],
+                                         where_=[cls.username == username_, cls.password == password_])
 
     @classmethod
     async def get_user_by_email_(cls, email_: str) -> object:
-        return await Example.get_(select_=[cls.id, cls.username, cls.password, cls.email],
-                                  where_=[cls.email == email_])
+        return await Example.get_kwargs_(select_=[cls.id, cls.username, cls.password, cls.email],
+                                         where_=[cls.email == email_])
 
     @classmethod
     async def get_user_by_username_(cls, username_: str) -> object:
-        return await Example.get_(select_=[cls.id, cls.username, cls.password, cls.email],
-                                  where_=[cls.username == username_])
+        return await Example.get_kwargs_(select_=[cls.id, cls.username, cls.password, cls.email],
+                                         where_=[cls.username == username_])
 
     @classmethod
     async def get_user_by_user_id_(cls, user_id_: int) -> object:
-        return await Example.get_(select_=[cls.id, cls.username, cls.password, cls.email],
-                                  where_=[cls.id == user_id_])
+        return await Example.get_kwargs_(select_=[cls.id, cls.username, cls.password, cls.email],
+                                         where_=[cls.id == user_id_])
 
     @classmethod
     async def get_users_(cls) -> list[object]:
-        return await Example.get_(select_=[cls.id, cls.username, cls.password, cls.email], type_=True)
+        return await Example.get_kwargs_(select_=[cls.id, cls.username, cls.password, cls.email], type_=True)
 
     @classmethod
     async def add_user_(cls, username_: str, password_: str, email_: str) -> None:
@@ -73,18 +73,21 @@ class Tokens(Base):
 
     @classmethod
     async def get_user_token_(cls, user_id_: int) -> object:
-        return await Example.get_(select_=[cls.id, cls.access_token, cls.datetime_create, cls.expires, cls.user_id],
-                                  where_=[cls.user_id == user_id_])
+        return await Example.get_kwargs_(
+            select_=[cls.id, cls.access_token, cls.datetime_create, cls.expires, cls.user_id],
+            where_=[cls.user_id == user_id_])
 
     @classmethod
     async def get_check_token_(cls, token_: str) -> object:
-        return await Example.get_(select_=[cls.id, cls.access_token, cls.datetime_create, cls.expires, cls.user_id],
-                                  where_=[cls.access_token == token_, cls.expires > datetime.now()])
+        return await Example.get_kwargs_(
+            select_=[cls.id, cls.access_token, cls.datetime_create, cls.expires, cls.user_id],
+            where_=[cls.access_token == token_, cls.expires > datetime.now()])
 
     @classmethod
     async def get_tokens_(cls) -> list[object]:
-        return await Example.get_(select_=[cls.id, cls.access_token, cls.datetime_create, cls.expires, cls.user_id],
-                                  type_=True)
+        return await Example.get_kwargs_(
+            select_=[cls.id, cls.access_token, cls.datetime_create, cls.expires, cls.user_id],
+            type_=True)
 
     @classmethod
     async def add_user_token_(cls, user_id_: int) -> None:
@@ -111,11 +114,11 @@ class Products(Base):
 
     @classmethod
     async def get_products_(cls) -> list[object]:
-        return await Example.get_(select_=[cls.id, cls.name_product], type_=True)
+        return await Example.get_kwargs_(select_=[cls.id, cls.name_product], type_=True)
 
     @classmethod
     async def get_product_(cls, product_id: int) -> object:
-        return await Example.get_(select_=[cls.id, cls.name_product], where_=[cls.id == product_id])
+        return await Example.get_kwargs_(select_=[cls.id, cls.name_product], where_=[cls.id == product_id])
 
     @classmethod
     async def add_product_(cls, name_product_: str) -> None:
@@ -133,14 +136,16 @@ class Carts(Base):
 
     @classmethod
     async def get_cart_(cls, user_id: int) -> list[object]:
-        return await Example.get_(select_=[Products.name_product.label('name_product'), cls.user_id],
-                                  join_=[Products, Products.id == cls.product_id],
-                                  where_=[cls.user_id == user_id], type_=True)
+        return await Example.get_kwargs_(
+            select_=[Products.name_product.label('name_product'), cls.user_id],
+            join_=[Products, Products.id == cls.product_id],
+            where_=[cls.user_id == user_id], type_=True)
 
     @classmethod
     async def get_all_cart_(cls, user_id: int) -> list[object]:
-        return await Example.get_(select_=[cls.id, cls.product_id, cls.user_id],
-                                  where_=[cls.user_id == user_id], type_=True)
+        return await Example.get_kwargs_(
+            select_=[cls.id, cls.product_id, cls.user_id],
+            where_=[cls.user_id == user_id], type_=True)
 
     @classmethod
     async def add_cart_(cls, product_id_: int, user_id_: int) -> None:
@@ -164,9 +169,10 @@ class Orders(Base):
 
     @classmethod
     async def get_order_(cls, user_id: int) -> list[object]:
-        return await Example.get_(select_=[Products.name_product.label('name_product'), cls.user_id],
-                                  join_=[Products, Products.id == cls.product_id],
-                                  where_=[cls.user_id == user_id], type_=True)
+        return await Example.get_kwargs_(
+            select_=[Products.name_product.label('name_product'), cls.user_id],
+            join_=[Products, Products.id == cls.product_id],
+            where_=[cls.user_id == user_id], type_=True)
 
     @classmethod
     async def add_order_(cls, cart_id: int, product_id_: int, user_id_: int) -> None:
@@ -181,7 +187,7 @@ class Orders(Base):
 
 class Example:
     @classmethod
-    async def get_(cls, select_: list, join_: list = None, where_: list = None, type_: bool = False):
+    async def get_kwargs_(cls, select_: list, join_: list = None, where_: list = None, type_: bool = False):
         kwargs = {
             "select_": select_,
             "join_": join_,

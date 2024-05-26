@@ -4,14 +4,13 @@ function fetchData(url) {
 
 function displayUsersTable(data) {
     const table = document.getElementById('users-table');
-    table.innerHTML = '<tbody><tr><td>ID пользователя</td><td>Имя пользователя</td><td>Пароль</td><td>Электронная почта</td></tr></tbody>';
+    table.innerHTML = '<tbody><tr><td>ID пользователя</td><td>Имя пользователя</td><td>Электронная почта</td></tr></tbody>';
     if (data && Array.isArray(data.data)) {
         data.data.forEach(user => {
             const row = table.insertRow();
             row.insertCell(0).textContent = user.id;
             row.insertCell(1).textContent = user.username;
-            row.insertCell(2).textContent = user.password;
-            row.insertCell(3).textContent = user.email;
+            row.insertCell(2).textContent = user.email;
         });
     } else {
         table.insertRow().insertCell(0).textContent = 'Пользователи не найдены';
@@ -37,5 +36,5 @@ function displayTokensTable(data) {
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchData('/api/users', {method: 'GET'}).then(displayUsersTable);
-    fetchData('/api/users_token', {method: 'GET'}).then(displayTokensTable);
+    fetchData('/api/tokens', {method: 'GET'}).then(displayTokensTable);
 });
