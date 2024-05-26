@@ -27,34 +27,28 @@ class Users(Base):
     email = Column(String(length=255), nullable=False)
 
     @classmethod
-    async def get_(cls, where_: list, type_: bool):
-        kwargs = {
-            "select_": [cls.id, cls.username, cls.password, cls.email],
-            "join_": [],
-            "where_": where_,
-            "type_": type_
-        }
-        return await Example.get_result_(kwargs=kwargs)
-
-    @classmethod
     async def get_user_(cls, username_: str, password_: str) -> object:
-        return await cls.get_(where_=[cls.username == username_, cls.password == password_], type_=False)
+        return await Example.get_(select_=[cls.id, cls.username, cls.password, cls.email],
+                                  where_=[cls.username == username_, cls.password == password_])
 
     @classmethod
     async def get_user_by_email_(cls, email_: str) -> object:
-        return await cls.get_(where_=[cls.email == email_], type_=False)
+        return await Example.get_(select_=[cls.id, cls.username, cls.password, cls.email],
+                                  where_=[cls.email == email_])
 
     @classmethod
     async def get_user_by_username_(cls, username_: str) -> object:
-        return await cls.get_(where_=[cls.username == username_], type_=False)
+        return await Example.get_(select_=[cls.id, cls.username, cls.password, cls.email],
+                                  where_=[cls.username == username_])
 
     @classmethod
     async def get_user_by_user_id_(cls, user_id_: int) -> object:
-        return await cls.get_(where_=[cls.id == user_id_], type_=False)
+        return await Example.get_(select_=[cls.id, cls.username, cls.password, cls.email],
+                                  where_=[cls.id == user_id_])
 
     @classmethod
     async def get_users_(cls) -> list[object]:
-        return await cls.get_(where_=[], type_=True)
+        return await Example.get_(select_=[cls.id, cls.username, cls.password, cls.email], type_=True)
 
     @classmethod
     async def add_user_(cls, username_: str, password_: str, email_: str) -> None:
@@ -78,26 +72,19 @@ class Tokens(Base):
     user_id = Column(BigInteger, ForeignKey(Users.id), nullable=False)
 
     @classmethod
-    async def get_(cls, where_: list, type_: bool):
-        kwargs = {
-            "select_": [cls.id, cls.access_token, cls.datetime_create, cls.expires, cls.user_id],
-            "join_": [],
-            "where_": where_,
-            "type_": type_
-        }
-        return await Example.get_result_(kwargs=kwargs)
-
-    @classmethod
     async def get_user_token_(cls, user_id_: int) -> object:
-        return await cls.get_(where_=[cls.user_id == user_id_], type_=False)
+        return await Example.get_(select_=[cls.id, cls.access_token, cls.datetime_create, cls.expires, cls.user_id],
+                                  where_=[cls.user_id == user_id_])
 
     @classmethod
     async def get_check_token_(cls, token_: str) -> object:
-        return await cls.get_(where_=[cls.access_token == token_, cls.expires > datetime.now()], type_=False)
+        return await Example.get_(select_=[cls.id, cls.access_token, cls.datetime_create, cls.expires, cls.user_id],
+                                  where_=[cls.access_token == token_, cls.expires > datetime.now()])
 
     @classmethod
     async def get_tokens_(cls) -> list[object]:
-        return await cls.get_(where_=[], type_=True)
+        return await Example.get_(select_=[cls.id, cls.access_token, cls.datetime_create, cls.expires, cls.user_id],
+                                  type_=True)
 
     @classmethod
     async def add_user_token_(cls, user_id_: int) -> None:
@@ -123,22 +110,12 @@ class Products(Base):
     name_product = Column(String(length=255), nullable=False)
 
     @classmethod
-    async def get_(cls, where_: list, type_: bool):
-        kwargs = {
-            "select_": [cls.id, cls.name_product],
-            "join_": [],
-            "where_": where_,
-            "type_": type_
-        }
-        return await Example.get_result_(kwargs=kwargs)
-
-    @classmethod
     async def get_products_(cls) -> list[object]:
-        return await cls.get_(where_=[], type_=True)
+        return await Example.get_(select_=[cls.id, cls.name_product], type_=True)
 
     @classmethod
     async def get_product_(cls, product_id: int) -> object:
-        return await cls.get_(where_=[cls.id == product_id], type_=False)
+        return await Example.get_(select_=[cls.id, cls.name_product], where_=[cls.id == product_id])
 
     @classmethod
     async def add_product_(cls, name_product_: str) -> None:
@@ -155,23 +132,25 @@ class Carts(Base):
     user_id = Column(BigInteger, ForeignKey(Users.id), nullable=False)
 
     @classmethod
-    async def get_(cls, where_: list, type_: bool):
-        kwargs = {
-            "select_": [Products.name_product.label('name_product'), cls.user_id],
-            "join_": [Products, Products.id == cls.product_id],
-            "where_": where_,
-            "type_": type_
-        }
-        return await Example.get_result_(kwargs=kwargs)
-
-    @classmethod
     async def get_cart_(cls, user_id: int) -> list[object]:
-        return await cls.get_(where_=[cls.user_id == user_id], type_=True)
+        return await Example.get_(select_=[Products.name_product.label('name_product'), cls.user_id],
+                                  join_=[Products, Products.id == cls.product_id],
+                                  where_=[cls.user_id == user_id], type_=True)
 
     @classmethod
-    async def add_product_to_cart_by_id_(cls, product_id_: int, user_id_: int) -> None:
+    async def get_all_cart_(cls, user_id: int) -> list[object]:
+        return await Example.get_(select_=[cls.id, cls.product_id, cls.user_id],
+                                  where_=[cls.user_id == user_id], type_=True)
+
+    @classmethod
+    async def add_cart_(cls, product_id_: int, user_id_: int) -> None:
         async with get_async_session() as session:
             await session.execute(insert(Carts).values(product_id=product_id_, user_id=user_id_))
+
+    @classmethod
+    async def delete_cart_(cls, user_id: int):
+        async with get_async_session() as session:
+            await session.execute(delete(Carts).where(cls.user_id == user_id))
 
 
 class Orders(Base):
@@ -184,21 +163,33 @@ class Orders(Base):
     user_id = Column(BigInteger, ForeignKey(Users.id), nullable=False)
 
     @classmethod
-    async def get_(cls, where_: list, type_: bool):
+    async def get_order_(cls, user_id: int) -> list[object]:
+        return await Example.get_(select_=[Products.name_product.label('name_product'), cls.user_id],
+                                  join_=[Products, Products.id == cls.product_id],
+                                  where_=[cls.user_id == user_id], type_=True)
+
+    @classmethod
+    async def add_order_(cls, cart_id: int, product_id_: int, user_id_: int) -> None:
+        async with get_async_session() as session:
+            await session.execute(insert(Orders).values(cart_id=cart_id, product_id=product_id_, user_id=user_id_))
+
+    @classmethod
+    async def delete_all_orders_for_cart_(cls, user_id: int):
+        async with get_async_session() as session:
+            await session.execute(delete(Orders).where(cls.user_id == user_id))
+
+
+class Example:
+    @classmethod
+    async def get_(cls, select_: list, join_: list = None, where_: list = None, type_: bool = False):
         kwargs = {
-            "select_": [Products.name_product.label('name_product'), cls.user_id],
-            "join_": [Products, Products.id == cls.product_id],
+            "select_": select_,
+            "join_": join_,
             "where_": where_,
             "type_": type_
         }
         return await Example.get_result_(kwargs=kwargs)
 
-    @classmethod
-    async def get_order_(cls, user_id: int) -> list[object]:
-        return await cls.get_(where_=[cls.user_id == user_id], type_=True)
-
-
-class Example:
     @classmethod
     async def get_result_(cls, kwargs: dict):
         if not kwargs.get("join_"):
