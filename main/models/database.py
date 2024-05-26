@@ -28,27 +28,27 @@ class Users(Base):
 
     @classmethod
     async def get_user_(cls, username_: str, password_: str) -> object:
-        return await Example.get_kwargs_(select_=[cls.id, cls.username, cls.email],
+        return await Example.get_kwargs_(select_=[cls.id, cls.username, cls.password, cls.email],
                                          where_=[cls.username == username_, cls.password == password_])
 
     @classmethod
     async def get_user_by_email_(cls, email_: str) -> object:
-        return await Example.get_kwargs_(select_=[cls.id, cls.username, cls.email],
+        return await Example.get_kwargs_(select_=[cls.id, cls.username, cls.password, cls.email],
                                          where_=[cls.email == email_])
 
     @classmethod
     async def get_user_by_username_(cls, username_: str) -> object:
-        return await Example.get_kwargs_(select_=[cls.id, cls.username, cls.email],
+        return await Example.get_kwargs_(select_=[cls.id, cls.username, cls.password, cls.email],
                                          where_=[cls.username == username_])
 
     @classmethod
     async def get_user_by_user_id_(cls, user_id_: int) -> object:
-        return await Example.get_kwargs_(select_=[cls.id, cls.username, cls.email],
+        return await Example.get_kwargs_(select_=[cls.id, cls.username, cls.password, cls.email],
                                          where_=[cls.id == user_id_])
 
     @classmethod
     async def get_users_(cls) -> list[object]:
-        return await Example.get_kwargs_(select_=[cls.id, cls.username, cls.email], type_=True)
+        return await Example.get_kwargs_(select_=[cls.id, cls.username, cls.password, cls.email], type_=True)
 
     @classmethod
     async def add_user_(cls, username_: str, password_: str, email_: str) -> None:
