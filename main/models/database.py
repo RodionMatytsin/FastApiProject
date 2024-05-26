@@ -183,6 +183,20 @@ class Orders(Base):
     product_id = Column(BigInteger, ForeignKey(Products.id), nullable=False)
     user_id = Column(BigInteger, ForeignKey(Users.id), nullable=False)
 
+    @classmethod
+    async def get_(cls, where_: list, type_: bool):
+        kwargs = {
+            "select_": [Products.name_product.label('name_product'), cls.user_id],
+            "join_": [Products, Products.id == cls.product_id],
+            "where_": where_,
+            "type_": type_
+        }
+        return await Example.get_result_(kwargs=kwargs)
+
+    @classmethod
+    async def get_order_(cls, user_id: int) -> list[object]:
+        return await cls.get_(where_=[cls.user_id == user_id], type_=True)
+
 
 class Example:
     @classmethod

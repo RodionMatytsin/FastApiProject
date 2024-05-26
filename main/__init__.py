@@ -11,6 +11,6 @@ templates = Jinja2Templates(directory="templates")
 from main.views import views
 from main.api import api_auth
 from main.api import api_cart
-# from main.api import api_order
+from main.api import api_order
 from main.api import api_product
 from main.api import api_user
