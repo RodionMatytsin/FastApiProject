@@ -53,11 +53,7 @@ class Users(Base):
     @classmethod
     async def add_user_(cls, username_: str, password_: str, email_: str) -> None:
         async with get_async_session() as session:
-            await session.execute(insert(Users).values(
-                username=username_,
-                password=password_,
-                email=email_
-            ))
+            await session.execute(insert(Users).values(username=username_, password=password_, email=email_))
 
 
 class Tokens(Base):
@@ -86,25 +82,20 @@ class Tokens(Base):
     @classmethod
     async def get_tokens_(cls) -> list[object]:
         return await Example.get_kwargs_(
-            select_=[cls.id, cls.access_token, cls.datetime_create, cls.expires, cls.user_id],
-            type_=True)
+            select_=[cls.id, cls.access_token, cls.datetime_create, cls.expires, cls.user_id], type_=True)
 
     @classmethod
     async def add_user_token_(cls, user_id_: int) -> None:
         async with get_async_session() as session:
             await session.execute(insert(Tokens).values(
-                access_token=uuid4(),
-                datetime_create=datetime.now(),
-                expires=datetime.now() + timedelta(weeks=1),
-                user_id=user_id_
-            ))
+                access_token=uuid4(), datetime_create=datetime.now(),
+                expires=datetime.now() + timedelta(weeks=1), user_id=user_id_))
 
     @classmethod
     async def set_user_token_(cls, new_token_: str, user_id_: int) -> None:
         async with get_async_session() as session:
             await session.execute(update(Tokens).where(cls.user_id == user_id_).values(
-                access_token=new_token_, expires=datetime.now() + timedelta(weeks=1)
-            ))
+                access_token=new_token_, expires=datetime.now() + timedelta(weeks=1)))
 
 
 class Products(Base):
@@ -153,7 +144,7 @@ class Carts(Base):
             await session.execute(insert(Carts).values(product_id=product_id_, user_id=user_id_))
 
     @classmethod
-    async def delete_cart_(cls, user_id: int):
+    async def delete_cart_(cls, user_id: int) -> None:
         async with get_async_session() as session:
             await session.execute(delete(Carts).where(cls.user_id == user_id))
 
@@ -180,7 +171,7 @@ class Orders(Base):
             await session.execute(insert(Orders).values(cart_id=cart_id, product_id=product_id_, user_id=user_id_))
 
     @classmethod
-    async def delete_all_orders_for_cart_(cls, user_id: int):
+    async def delete_all_orders_for_cart_(cls, user_id: int) -> None:
         async with get_async_session() as session:
             await session.execute(delete(Orders).where(cls.user_id == user_id))
 
