@@ -24,7 +24,7 @@ async def get_user(username_: str, password_: str) -> UserRegular:
     )
 
 
-async def update_user_token(user_id_: int) -> str:
+async def update_user_token(user_id_: int) -> str | object:
     check_token = await Tokens.get_user_token_(user_id_=user_id_)
     if not check_token:
         await Tokens.add_user_token_(user_id_=user_id_)
@@ -39,10 +39,10 @@ async def update_user_token(user_id_: int) -> str:
             return check_token.access_token
 
 
-async def get_login_user(user: UserLoginSchema, response: Response):
+async def get_login_user(user: UserLoginSchema, response: Response) -> object:
     user = await get_user(username_=user.username, password_=hash_password(user.password))
     token = await update_user_token(user_id_=user.id)
-    response.set_cookie(key="user_token", value=token, httponly=True)
+    response.set_cookie(key="user_token", value=token, httponly=True, samesite="strict", max_age=604800)
     return user
 
 
@@ -91,15 +91,16 @@ async def create_new_user(username_: str, password_: str, email_: str) -> UserRe
     )
 
 
-async def get_signup_user(user: UserSignUp, response: Response) -> UserRegular:
+async def get_signup_user(user: UserSignUp, response: Response) -> object:
     new_user = await create_new_user(username_=user.username, password_=hash_password(user.password), email_=user.email)
     token = await update_user_token(user_id_=new_user.id)
-    response.set_cookie(key="user_token", value=token, httponly=True)
+    response.set_cookie(key="user_token", value=token, httponly=True, samesite="strict", max_age=604800)
     return new_user
 
 
-async def get_logout_user(response: Response):
+async def get_logout_user(response: Response) -> str:
     response.delete_cookie(key="user_token")
+    return "Выход выполнен успешно!"
 
 
 async def get_check_token(token_: str) -> object | None:
@@ -131,11 +132,9 @@ async def get_current_user(user_token=Cookie(default=None)) -> UserRegular:
         )
 
 
-async def get_users():
-    data = await Users.get_users_()
-    return [dict(id=row[0], username=row[1], password=row[2], email=row[3]) for row in data]
+async def get_users() -> list:
+    return [dict(id=row[0], username=row[1], password=row[2], email=row[3]) for row in await Users.get_users_()]
 
 
-async def get_tokens():
-    data = await Tokens.get_tokens_()
-    return [dict(id=i[0], access_token=i[1], datetime_create=i[2], expires=i[3], user_id=i[4]) for i in data]
+async def get_tokens() -> list:
+    return [dict(id=i[0], access_token=i[1], datetime_create=i[2], expires=i[3], user_id=i[4]) for i in await Tokens.get_tokens_()]
