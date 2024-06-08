@@ -6,4 +6,3 @@ DATABASE_PASSWORD = 'root' if os.getenv('DATABASE_PASSWORD') is None else os.get
 DATABASE_IP = 'localhost' if os.getenv('DATABASE_IP') is None else os.getenv('DATABASE_IP')
 DATABASE_PORT = 5432 if os.getenv('DATABASE_PORT') is None else os.getenv('DATABASE_PORT')
 DATABASE_NAME = 'postgres' if os.getenv('DATABASE_NAME') is None else os.getenv('DATABASE_NAME')
-
