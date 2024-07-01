@@ -17,3 +17,7 @@
 # Команды:
 # pip freeze > requirements.txt
 # pip install Jinja2 --upgrade
+
+
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
